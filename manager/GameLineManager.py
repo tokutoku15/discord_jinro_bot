@@ -1,4 +1,4 @@
-class GameManager():
+class GameLineManager():
 
   def __init__(self):
     pass
@@ -47,9 +47,30 @@ class GameManager():
     return rep
 
   def assignRoleLine(self, roleName, roleCamp):
-    rep = 'あなたの役職は{roleName}{roleCamp}です\n'.format(roleName=roleName,roleCamp=roleCamp)
+    rep = 'あなたの役職は{roleName}{roleCamp}です\n' \
+          '確認ができたら何かメッセージを送信してください\n'.format(roleName=roleName,roleCamp=roleCamp)
+    return rep
+  
+  def confirmRoleLine(self, user, hasConfirmed):
+    rep = ''
+    if not hasConfirmed:
+      rep += '{user}の確認ができました\n'.format(user=user)
+    else:
+      rep += 'もう確認は取れています\n'
+    return rep
+  
+  def confirmRoleLine2(self, allhasConfirmed):
+    rep = ''
+    if not allhasConfirmed:
+      rep += '他のプレイヤーの確認が終わるまでお待ちください\n'
+    else:
+      rep += '全員の確認が取れたのでテキストチャンネルに戻ってください\n'
     return rep
   
   def finishSendRoleLine(self):
     rep = '役職が決まりました\nDMに役職を送信しました\n'
+    return rep
+  
+  def sendGameStart(self):
+    rep = '\nそれではゲームを始めます\n'
     return rep

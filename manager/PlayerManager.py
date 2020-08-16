@@ -3,25 +3,50 @@ from player.Player import Player
 class PlayerManager():
 
   def __init__(self):
+    self.playerIdDict = {}
     self.pnamelist = []
-    self.playerlist = []
     self.playersDisplay = ''
+    self.count = 0
   
-  def decidePlayer(self):
-    self.playerlist = [Player(self.pnamelist[i][0], i, self.pnamelist[i][1]) for i in range(0, len(self.pnamelist))]
-    self.playersDisplay = '\n'.join([
-      '{id} : {playername}'.format(id=self.playerlist[i].getId(), playername=self.playerlist[i].getUserName())
-      for i in range(0, len(self.playerlist))
-    ])
+  def updatePlayer(self):
+    i = 0
+    for player in self.playerIdDict.values():
+      player.setId(i)
+      i += 1
   
-  def getPlayerList(self):
-    return self.playerlist
+  def getPlayersDisplaywithId(self):
+    playersDispList = [
+      '{id} : {pname}'.format(id=player.getId(), pname=player.getUserName())
+      for player in self.playerIdDict.values()
+    ]
+    text = '\n'.join(playersDispList)
+    return text
   
   def getPlayersDisplay(self):
-    return self.playersDisplay
+    playersDispList = [
+      '{pname}'.format(pname=player.getUserName())
+      for player in self.playerIdDict.values()
+    ]
+    text = '\n'.join(playersDispList)
+    return text
   
   def addPlayer(self, pname, userId):
-    self.pnamelist.append((pname, userId))
+    self.playerIdDict[userId] = Player(pname, userId)
   
   def getPlayerNum(self):
-    return len(self.playerlist)
+    return len(self.playerIdDict)
+
+  def getPlayerIdDict(self):
+    return self.playerIdDict
+
+  def registerDM(self, userId, dm):
+    self.playerIdDict[userId].setDM(dm)
+  
+  def getDMInfo(self, userId):
+    return self.playerIdDict[userId].getDM()
+  
+  def checkAllhasConfirmed(self):
+    for player in self.playerIdDict.values():
+      if not player.gethasConfirmed():
+        return False
+    return True

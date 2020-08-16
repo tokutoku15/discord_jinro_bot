@@ -2,13 +2,13 @@ import random
 
 class GameMaster():
 
-  def __init__(self, players, roles):
+  def __init__(self, playersDict, roles):
     '''役職の割り当て'''
-    for player in players:
+    for player in playersDict.values():
       random.shuffle(roles)
       player.assignRole(roles.pop(0))
     
-    self.players = players
+    self.playersDict = playersDict
     self.roles = roles
 
     '''第一夜で襲撃するか'''
@@ -26,16 +26,17 @@ class GameMaster():
         id=player.getId(),
         name=player.getUserName(),
         isArrival=arrival(player.getArrival()))
-      for player in self.players
+      for player in self.playersDict.values()
     ]
     self.playerDisp = '\n'.join(playerList)
     return self.playerDisp
   
-  def nightCome(self):
-    rep = ':full_moon: みなさん、恐ろしい夜がやってきました\n'
-    rep += '\nこれから夜のアクションを行ってください'
-    rep += '\n夜のアクションはDMで行うことができます'
-    pass
+  def firstNightCome(self):
+    rep = '\n{a:=^50}\n' \
+          ':full_moon: みなさん、恐ろしい夜がやってきました\n' \
+          '\nこれから夜のアクションを行ってください' \
+          '\n夜のアクションはDMで行うことができます'.format(a='')
+    return rep
 
   def nightAct(self, player):
     pass

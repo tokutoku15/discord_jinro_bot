@@ -8,5 +8,5 @@ TOKEN = env[0]
 CHANNEL_ID = int(env[1])
 
 client = gameClient()
-client.set_channel_id(CHANNEL_ID)
+client.set_text_channel_id(CHANNEL_ID)
 client.run(TOKEN)

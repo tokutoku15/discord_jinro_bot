@@ -1,4 +1,5 @@
 from controller.phase import phase
+from controller.phase import gamePhase
 
 class PhaseController():
 
@@ -27,6 +28,12 @@ class PhaseController():
   
   def result(self):
     self.phase = phase[4]
+
+  def nightCome(self):
+    self.phase = gamePhase[1]
+  
+  def dayBreak(self):
+    self.phase = gamePhase[0]
   
   def getPhase(self):
     return self.phase

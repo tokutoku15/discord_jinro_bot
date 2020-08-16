@@ -5,7 +5,7 @@ from controller.PhaseController import PhaseController
 from controller.phase import phase
 from controller.phase import gamePhase
 from manager.GameMaster import GameMaster
-from manager.GameManager import GameManager
+from manager.GameLineManager import GameLineManager
 from manager.PlayerManager import PlayerManager
 from manager.RoleManager import RoleManager
 
@@ -16,12 +16,13 @@ class gameClient(discord.Client):
     print(self.user)
     print(self.user.id)
     print('---------')
+    self.initialize()
     self.jinroChannel = self.get_channel(self.channel_id)
     self.phaseController = PhaseController()
   
   async def on_message(self, message):
     if self.user in message.mentions:
-      if self.check_channel_id(message.channel.id):
+      if self.check_text_channel_id(message.channel.id):
         if self.phaseController.getPhase() == phase[0]:
           await self.proposalPhase(message)
         else:
@@ -31,29 +32,37 @@ class gameClient(discord.Client):
           await message.channel.send('人狼ゲームを始める時は{0}チャンネルでメンションしてね'.format(self.get_channel(self.channel_id)))
     else:
       if self.user != message.author:
-        if self.check_channel_id(message.channel.id):
+        if self.check_text_channel_id(message.channel.id):
           if self.phaseController.getPhase() == phase[1]:
-            await self.joinPhase(message)
+              await self.joinPhase(message)
           if self.phaseController.getPhase() == phase[2]:
-            await self.decideRolePhase(message)
-
+              await self.decideRolePhase(message)
+        elif self.check_dm_channel_id(message):
+          if self.phaseController.getPhase() == phase[3]:
+            await self.confirmPlayerRole(message)
   
-  def set_channel_id(self, channel_id):
+  def set_text_channel_id(self, channel_id):
     self.channel_id = channel_id
 
-  def check_channel_id(self, id):
+  def check_text_channel_id(self, id):
     return id == self.channel_id
+
+  def check_dm_channel_id(self, message):
+    if not message.author.id in self.playerManager.getPlayerIdDict().keys():
+      return False
+    dm = self.playerManager.getDMInfo(message.author.id)
+    return dm.id == message.channel.id
 
   '''
   ゲーム開始のフェーズ
   '''
   async def proposalPhase(self, message):
     self.initialize()
-    await self.proposal(message)
     self.phaseController.invitation()
+    await self.proposal(message)
 
   async def proposal(self, message):
-    rep = self.gameManager.proposalLine(message.author)
+    rep = self.gameLineManager.proposalLine(message.author)
     await message.channel.send(rep)
     await self.join(message)
   
@@ -64,26 +73,27 @@ class gameClient(discord.Client):
     if message.content.startswith('参加'):
       await self.join(message)
     if message.content.startswith('確定'):
-      await self.decidePlayer(message)
       self.phaseController.preparation()
+      await self.decidePlayer(message)
       await self.sendRoleList(message.channel)
   
   async def join(self, message):
     self.playerManager.addPlayer(f'{message.author}', message.author.id)
-    self.playerManager.decidePlayer()
-    rep = self.gameManager.joinLine(message.author, self.playerManager.getPlayersDisplay())
+    dm = await message.author.create_dm()
+    self.playerManager.registerDM(message.author.id, dm)
+    rep = self.gameLineManager.joinLine(message.author, self.playerManager.getPlayersDisplay())
     await message.channel.send(rep)
   
   async def decidePlayer(self, message):
-    self.playerManager.decidePlayer()
-    rep = self.gameManager.decidePlayerLine(
+    self.playerManager.updatePlayer()
+    rep = self.gameLineManager.decidePlayerLine(
       self.playerManager.getPlayerNum(), 
-      self.playerManager.getPlayersDisplay()
+      self.playerManager.getPlayersDisplaywithId()
     )
     await message.channel.send(rep)
 
   async def sendRoleList(self, channel):
-    text = self.gameManager.roleListLine(self.roleManager.getRolesDisplay())
+    text = self.gameLineManager.roleListLine(self.roleManager.getRolesDisplay())
     await channel.send(text)
 
   '''
@@ -92,34 +102,54 @@ class gameClient(discord.Client):
   async def decideRolePhase(self, message):
     if '役職リスト' in message.content:
       if self.equalRoleNum(self.playerManager.getPlayerNum(), message.content):
-        await self.decideRoleNum(message.channel)
+        await self.decideRoleNum()
         self.roleManager.generateRoleStack()
-        self.gameMaster = GameMaster(self.playerManager.getPlayerList(), self.roleManager.getRoleStack())
+        self.gameMaster = GameMaster(self.playerManager.getPlayerIdDict(), self.roleManager.getRoleStack())
         self.phaseController.playing()
         await self.assignRole(message.channel)
       else:
-        rep = self.gameManager.requestSendAgainLine()
+        rep = self.gameLineManager.requestSendAgainLine()
         await message.channel.send(rep)
   
   def equalRoleNum(self, playerNum, content):
     return playerNum == self.roleManager.updateRoleNum(content)
   
-  async def decideRoleNum(self, channel):
-    rep = self.gameManager.decideRoleNumLine(self.roleManager.getRolesDisplay())
-    await channel.send(rep)
+  async def decideRoleNum(self):
+    rep = self.gameLineManager.decideRoleNumLine(self.roleManager.getRolesDisplay())
+    await self.jinroChannel.send(rep)
   
   async def assignRole(self, channel):
-    for player in self.playerManager.getPlayerList():
+    for player in self.playerManager.getPlayerIdDict().values():
       isWerewolf = lambda x: '(人狼陣営):wolf:' if x else '(村人陣営):man:'
       user = self.get_user(player.getUserId())
-      pay = self.gameManager.assignRoleLine(
+      pay = self.gameLineManager.assignRoleLine(
         player.getRole().getDispName(), 
         isWerewolf(player.getRole().amIWerewolf()) )
       await user.send(pay)
-    text = self.gameManager.finishSendRoleLine()
+    text = self.gameLineManager.finishSendRoleLine()
     await channel.send(text)
+  
+  '''
+  ゲーム本編のフェーズ
+  '''
+  async def confirmPlayerRole(self, message):
+    player = self.playerManager.getPlayerIdDict()[message.author.id]
+    text = self.gameLineManager.confirmRoleLine(
+      message.author, 
+      player.gethasConfirmed())
+    player.confirmRole()
+    text += self.gameLineManager.confirmRoleLine2(self.playerManager.checkAllhasConfirmed())
+    await message.channel.send(text)
+    if self.playerManager.checkAllhasConfirmed():
+      self.phaseController.nightCome()
+      await self.nightPhase()
+  
+  async def nightPhase(self):
+    text = self.gameLineManager.sendGameStart()
+    text += self.gameMaster.firstNightCome()
+    await self.get_channel(self.channel_id).send(text)
 
   def initialize(self):
     self.playerManager = PlayerManager()
     self.roleManager   = RoleManager()
-    self.gameManager   = GameManager()
+    self.gameLineManager   = GameLineManager()

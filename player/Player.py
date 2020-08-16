@@ -3,18 +3,23 @@ class Player():
   '''
   参加順？にidを与える
   '''
-  def __init__(self, username, id, userId):
+  def __init__(self, username, userId):
     self.username = username
-    self.id = id
+    self.id = 0
     self.userId = userId
     self.votedCount = 0
     self.isArrival = True
     self.hasVoted = False
     self.targetId = -1
     self.isExposed = False
+    self.hasConfirmed = False
+    self.dm = None
   
   def getUserName(self):
     return self.username
+  
+  def setId(self, id):
+    self.id = id
   
   def getId(self):
     return self.id
@@ -54,3 +59,15 @@ class Player():
   
   def getIsExposed(self):
     return self.isExposed
+  
+  def setDM(self, dm):
+    self.dm = dm
+  
+  def getDM(self):
+    return self.dm 
+  
+  def confirmRole(self):
+    self.hasConfirmed = True
+  
+  def gethasConfirmed(self):
+    return self.hasConfirmed
