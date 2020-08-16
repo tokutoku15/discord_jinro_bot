@@ -6,17 +6,14 @@ from role.Psychic       import Psychic
 
 class RoleManager():
 
-  
   def __init__(self):
     self.RoleList = [Villager(), Werewolf(), Night(), FortuneTeller(), Psychic()]
-    isWerewolf = lambda amIwerewolf: '(人狼陣営)' if amIwerewolf else '(村人陣営)'
     self.RoleDict = {
-      role.getDispName() : 0 for role in self.RoleList
+      role : 0 for role in self.RoleList
     }
     self.RoleDispNameList = [
-      '{role} : {num}'.format(role=role, num=num)
-      for role, num in self.RoleDict.items()
-      ]
+      '{role} : {num}'.format(role=role.getDispName(), num=num)
+      for role, num in self.RoleDict.items() ]
     self.RolesDisplay = '\n'.join(self.RoleDispNameList)
   
   def getRoleList(self):
@@ -26,17 +23,20 @@ class RoleManager():
     return self.RolesDisplay
   
   def updateRoleNum(self, listmessage):
+    rolenum = 0
     textline = listmessage.split("\n")
     for text in textline:
-      for roleDispName in self.RoleDict.keys():
-        if roleDispName in text:
-          num = text.split(':')[1]
-          self.RoleDict[roleDispName] = int(num)
+      for role in self.RoleDict.keys():
+        if role.getDispName() in text:
+          num = int(text.split(':')[1])
+          rolenum += num
+          self.RoleDict[role] = num
     self.updateDisp()
+    return rolenum
 
   def updateDisp(self):
     self.RoleDispNameList = [
-      '{role} : {num}'.format(role=role, num=num)
+      '{role} : {num}'.format(role=role.getDispName(), num=num)
       for role, num in self.RoleDict.items()
       ]
     self.RolesDisplay = '\n'.join(self.RoleDispNameList)

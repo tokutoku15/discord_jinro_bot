@@ -22,4 +22,6 @@ class PlayerManager():
   
   def addPlayer(self, pname, userId):
     self.pnamelist.append((pname, userId))
-
+  
+  def getPlayerNum(self):
+    return len(self.playerlist)

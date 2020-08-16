@@ -9,10 +9,10 @@ class Role():
   def getDispName(self):
     return self.name
 
-  def setRole(self, role):
+  def setRoleName(self, role):
     self.role = role
   
-  def getRole(self):
+  def getRoleName(self):
     return self.role
   
   def assigning(self):
