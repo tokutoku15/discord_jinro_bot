@@ -8,10 +8,10 @@ class Player():
     self.id = 0
     self.userId = userId
     self.votedCount = 0
-    self.isArrival = True
+    self.isAlive = True
     self.hasVoted = False
     self.targetId = -1
-    self.isExposed = False
+    self.isRevealed = False
     self.hasConfirmed = False
     self.dm = None
   
@@ -41,10 +41,10 @@ class Player():
     self.hasVoted = True
 
   def kill(self):
-    self.isArrival = False
+    self.isAlive = False
 
-  def getArrival(self):
-    return self.isArrival
+  def getIsAlive(self):
+    return self.isAlive
   
   def getUserId(self):
     return self.userId
@@ -54,11 +54,11 @@ class Player():
     self.hasVoted = False
     self.targetId = -1
   
-  def exposed(self):
-    self.isExposed = True
+  def revealRole(self):
+    self.isRevealed = True
   
-  def getIsExposed(self):
-    return self.isExposed
+  def getIsRevealed(self):
+    return self.isRevealed
   
   def setDM(self, dm):
     self.dm = dm

@@ -13,6 +13,6 @@ phase = [
 ゲーム本編の進行に関するフェーズ
 '''
 gamePhase = [
+  'night',
   'day',
-  'night'
 ]

@@ -4,7 +4,7 @@ class GameLineManager():
     pass
 
   '''
-  それぞれのセリフ(Line)をここでまとめる
+  ゲーム本編外のBotのセリフ(Line)をここでまとめる
   '''
   
   def proposalLine(self, user):
@@ -23,8 +23,8 @@ class GameLineManager():
   
   def decidePlayerLine(self, playerNum, displayList):
     rep = 'このメンバーで確定しました\n' \
-          '【参加者{playerNum}名】\n' \
-          '{a:=^30}\n{displayList}\n{a:=^30}\n' \
+          'プレイヤーIDとプレイヤー名を表示します\n' \
+          '{a:=^30}\n【参加者{playerNum}名】\n{displayList}\n{a:=^30}\n' \
             .format(playerNum=playerNum,displayList=displayList,a='')
     return rep
   
@@ -48,7 +48,7 @@ class GameLineManager():
 
   def assignRoleLine(self, roleName, roleCamp):
     rep = 'あなたの役職は{roleName}{roleCamp}です\n' \
-          '確認ができたら何かメッセージを送信してください\n'.format(roleName=roleName,roleCamp=roleCamp)
+          '確認ができたらここに何かメッセージを送信してください\n'.format(roleName=roleName,roleCamp=roleCamp)
     return rep
   
   def confirmRoleLine(self, user, hasConfirmed):
@@ -62,7 +62,7 @@ class GameLineManager():
   def confirmRoleLine2(self, allhasConfirmed):
     rep = ''
     if not allhasConfirmed:
-      rep += '他のプレイヤーの確認が終わるまでお待ちください\n'
+      rep += '他のプレイヤーの確認が終わるまでテキストチャンネルでお待ちください\n'
     else:
       rep += '全員の確認が取れたのでテキストチャンネルに戻ってください\n'
     return rep
@@ -71,6 +71,6 @@ class GameLineManager():
     rep = '役職が決まりました\nDMに役職を送信しました\n'
     return rep
   
-  def sendGameStart(self):
+  def gameStartLine(self):
     rep = '\nそれではゲームを始めます\n'
     return rep

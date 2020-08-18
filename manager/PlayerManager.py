@@ -16,7 +16,7 @@ class PlayerManager():
   
   def getPlayersDisplaywithId(self):
     playersDispList = [
-      '{id} : {pname}'.format(id=player.getId(), pname=player.getUserName())
+      '{id:>2} : {pname}'.format(id=player.getId(), pname=player.getUserName())
       for player in self.playerIdDict.values()
     ]
     text = '\n'.join(playersDispList)

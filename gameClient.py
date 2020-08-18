@@ -19,6 +19,7 @@ class gameClient(discord.Client):
     self.initialize()
     self.jinroChannel = self.get_channel(self.channel_id)
     self.phaseController = PhaseController()
+    await self.jinroChannel.send('Botのログインに成功しました')
   
   async def on_message(self, message):
     if self.user in message.mentions:
@@ -35,11 +36,18 @@ class gameClient(discord.Client):
         if self.check_text_channel_id(message.channel.id):
           if self.phaseController.getPhase() == phase[1]:
               await self.joinPhase(message)
+              return
           if self.phaseController.getPhase() == phase[2]:
               await self.decideRolePhase(message)
+              return
         elif self.check_dm_channel_id(message):
           if self.phaseController.getPhase() == phase[3]:
             await self.confirmPlayerRole(message)
+            return
+          if self.phaseController.getPhase() == gamePhase[0]:
+            return
+          if self.phaseController.getPhase() == gamePhase[1]:
+            return
   
   def set_text_channel_id(self, channel_id):
     self.channel_id = channel_id
@@ -142,12 +150,19 @@ class gameClient(discord.Client):
     await message.channel.send(text)
     if self.playerManager.checkAllhasConfirmed():
       self.phaseController.nightCome()
-      await self.nightPhase()
+      await self.firstNightCome()
   
-  async def nightPhase(self):
-    text = self.gameLineManager.sendGameStart()
-    text += self.gameMaster.firstNightCome()
+  async def firstNightCome(self):
+    text = self.gameLineManager.gameStartLine()
+    text += self.gameMaster.ruleDisp()
+    text += self.gameMaster.nightCome()
     await self.get_channel(self.channel_id).send(text)
+    await self.sendNightAct()
+  
+  async def sendNightAct(self):
+    text = 'nightActDM'
+    for userId in self.playerManager.getPlayerIdDict().keys():
+      await self.playerManager.getDMInfo(userId).send(text)
 
   def initialize(self):
     self.playerManager = PlayerManager()

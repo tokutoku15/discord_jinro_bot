@@ -30,10 +30,10 @@ class PhaseController():
     self.phase = phase[4]
 
   def nightCome(self):
-    self.phase = gamePhase[1]
+    self.phase = gamePhase[0]
   
   def dayBreak(self):
-    self.phase = gamePhase[0]
+    self.phase = gamePhase[1]
   
   def getPhase(self):
     return self.phase
