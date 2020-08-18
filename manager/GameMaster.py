@@ -17,37 +17,40 @@ class GameMaster():
     self.oneNightReveal = False
 
     self.dayCount = 1
+    '''生存者と死亡者リスト'''
+    self.aliveList = []
+    self.deadList = []
   
   def getDayCount(self):
     return self.dayCount
   
   def nextDay(self):
     self.dayCount += 1
-
-  def getDispAlivePlayers(self):
-    aliveList = [
-      '{id:>4} : {name:<12}'.format(
-        id=player.getId(),
-        name=player.getUserName())
-      for player in self.playersDict.values()
-      if player.getIsAlive()
-    ]
-    aliveDisp = '\n'.join(aliveList)
-    text = '{a:=^40}\n【生存者{num}名】\n{aliveList}\n{a:=^40}\n\n' \
-              .format(num=len(aliveList), aliveList=aliveDisp, a='')
-    return text
   
-  def getDispDeadPlayer(self):
-    deadList = [
+  def updateDispPlayer(self):
+    self.aliveList = [
       '{id:>4} : {name:<12}'.format(
         id=player.getId(),
         name=player.getUserName())
       for player in self.playersDict.values()
       if player.getIsAlive()
     ]
-    deadDisp = '\n'.join(deadList)
-    text = '{a:=40}\n【死亡者{num}名】\n{deadList}\n{a:=^40}\n\n' \
-              .format(num=len(deadList), deadList=deadDisp, a='')
+    self.deadList = [
+      '{id:>4} : {name:<12}'.format(
+        id=player.getId(),
+        name=player.getUserName())
+      for player in self.playersDict.values()
+      if not player.getIsAlive()
+    ]
+
+  def getDispDeadorAlive(self):
+    self.updateDispPlayer()
+    aliveDisp = '\n'.join(self.aliveList)
+    deadDisp = '\n'.join(self.deadList)
+    text = '{a:=^40}\n【生存者{alive}名】\n{aliveList}\n{a:=^40}\n' \
+            '【死亡者{dead}名】\n{deadList}\n{a:=^40}\n' \
+              .format(alive=len(self.aliveList), aliveList=aliveDisp, 
+              dead=len(self.deadList), deadList=deadDisp, a='')
     return text
   
   def ruleDisp(self):
@@ -69,7 +72,26 @@ class GameMaster():
     return rep
 
   def nightAct(self, player):
-    pass
+    roleDispName = player.getRole().getDispName()
+    roleName = player.getRole().getRoleName()
+    rep = 'あなたの役職は{role}です\n'.format(role=roleDispName) 
+    if roleName == 'villager':
+      rep += '人狼だと思うプレイヤーを選択してください\n'
+    elif roleName == 'fortuneteller':
+      rep += '占うプレイヤーを選択してください\n'
+    elif roleName == 'night':
+      rep += '人狼から守るプレイヤーを選択してください\n'
+    elif roleName == 'psychic':
+      if len(self.deadList) == 0:
+        rep += '人狼だと思うプレイヤーを選択してください\n'
+      else:
+        rep += '死亡者の役職を調べることができます\n' \
+               '役職を調べるプレイヤーを選択してください\n'
+    elif roleName == 'werewolf':
+      rep += '殺害するプレイヤーを選択してください\n'
+      if not self.oneNightKill:
+        rep += '※第1夜の殺害はできません'
+    return rep
   
   def dayBreak(self):
     pass

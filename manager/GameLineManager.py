@@ -28,10 +28,13 @@ class GameLineManager():
             .format(playerNum=playerNum,displayList=displayList,a='')
     return rep
   
-  def roleListLine(self, displayList):
+  def requestRoleNumLine(self):
     rep = '役職の人数を決めます\n' \
-          '次のリストをコピペして人数を決めて送信してください\n' \
-          '{list:=^30}\n{displayList}\n{a:=^33}\n' \
+          '次のリストをコピペして人数を決めて送信してください\n'
+    return rep
+  
+  def roleList(self,displayList):
+    rep = '{list:=^30}\n{displayList}\n{a:=^33}\n' \
             .format(list='役職リスト', displayList=displayList, a='')
     return rep
 

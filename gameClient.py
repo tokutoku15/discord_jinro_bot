@@ -101,7 +101,9 @@ class gameClient(discord.Client):
     await message.channel.send(rep)
 
   async def sendRoleList(self, channel):
-    text = self.gameLineManager.roleListLine(self.roleManager.getRolesDisplay())
+    text = self.gameLineManager.requestRoleNumLine()
+    await channel.send(text)
+    text = self.gameLineManager.roleList(self.roleManager.getRolesDisplay())
     await channel.send(text)
 
   '''
@@ -160,8 +162,9 @@ class gameClient(discord.Client):
     await self.sendNightAct()
   
   async def sendNightAct(self):
-    text = 'nightActDM'
-    for userId in self.playerManager.getPlayerIdDict().keys():
+    for userId, player in self.playerManager.getPlayerIdDict().items():
+      text = self.gameMaster.getDispDeadorAlive()
+      text += self.gameMaster.nightAct(player)
       await self.playerManager.getDMInfo(userId).send(text)
 
   def initialize(self):
