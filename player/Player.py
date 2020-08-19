@@ -10,10 +10,17 @@ class Player():
     self.votedCount = 0
     self.isAlive = True
     self.hasVoted = False
-    self.targetId = -1
-    self.isRevealed = False
     self.hasConfirmed = False
     self.dm = None
+    self.hasActed = False
+    '''騎士に守護対象'''
+    self.isProtected = False
+    '''占い師の占い対象'''
+    self.isRevealed = False
+    '''霊媒師の調査対象'''
+    self.isDeathAndRevealed = False
+    '''殺害対象に選択されているか'''
+    self.willBeKilled = False
   
   def getUserName(self):
     return self.username
@@ -30,15 +37,32 @@ class Player():
   def getRole(self):
     return self.role
 
-  def votedMe(self):
+  def voteMe(self):
     self.votedCount += 1
   
   def getVotedCount(self):
     return self.votedCount
   
-  def vote(self, targetId):
-    self.targetId = targetId
+  def vote(self):
     self.hasVoted = True
+  
+  def setNotWillBeKilled(self):
+    self.willBeKilled = False
+
+  def setKillFlag(self):
+    self.willBeKilled = True
+  
+  def getWillBeKilled(self):
+    return self.willBeKilled
+  
+  def IamProtected(self):
+    self.isProtected = True
+  
+  def isNotProtected(self):
+    self.isNotProtected = False
+  
+  def getIsProtected(self):
+    return self.isProtected
 
   def kill(self):
     self.isAlive = False
@@ -52,13 +76,18 @@ class Player():
   def resetVoteInfo(self):
     self.votedCount = 0
     self.hasVoted = False
-    self.targetId = -1
   
-  def revealRole(self):
-    self.isRevealed = True
+  def reveal(self):
+    if not self.isAlive:
+      self.isDeathAndRevealed = True
+    else:
+      self.isRevealed = True
   
   def getIsRevealed(self):
     return self.isRevealed
+  
+  def getIsDeathAndRevealed(self):
+    return self.isDeathAndRevealed
   
   def setDM(self, dm):
     self.dm = dm
@@ -71,3 +100,15 @@ class Player():
   
   def gethasConfirmed(self):
     return self.hasConfirmed
+  
+  def gethasVoted(self):
+    return self.hasVoted
+  
+  def resetActed(self):
+    self.hasActed = False
+  
+  def actFinish(self):
+    self.hasActed = True
+  
+  def getFinishedAct(self):
+    return self.hasActed

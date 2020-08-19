@@ -32,7 +32,7 @@ class PhaseController():
   def nightCome(self):
     self.phase = gamePhase[0]
   
-  def dayBreak(self):
+  def sunRises(self):
     self.phase = gamePhase[1]
   
   def getPhase(self):
