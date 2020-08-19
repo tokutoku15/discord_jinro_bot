@@ -215,7 +215,7 @@ class GameMaster():
       text += '{player}です\n'.format(player=self.killedLastNight.getUserName())
     else:
       text += 'いませんでした！人狼は静かに身を潜めたようです\n'
-    text += '{a:=^30}そして、にわかに怪しいと思われる人物が浮上しました\n\n'.format(a='')
+    text += 'そして、にわかに怪しいと思われる人物が浮上しました\n\n'
     text += 'その人物は・・・\n{doubt}\nです\n\n'.format(doubt=doubtfulPlayers)
     text += 'それでは今から人狼を見つけるために話し合いを行ってください\n'
     return text
