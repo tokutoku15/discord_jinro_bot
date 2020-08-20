@@ -43,9 +43,18 @@ class Player():
   def getVotedCount(self):
     return self.votedCount
   
-  def vote(self):
+  def resetVotedCount(self):
+    self.votedCount = 0
+  
+  def finishVoted(self):
     self.hasVoted = True
   
+  def resetHasVoted(self):
+    self.hasVoted = False
+  
+  def getHasVoted(self):
+    return self.hasVoted
+
   def setNotWillBeKilled(self):
     self.willBeKilled = False
 
@@ -72,10 +81,6 @@ class Player():
   
   def getUserId(self):
     return self.userId
-  
-  def resetVoteInfo(self):
-    self.votedCount = 0
-    self.hasVoted = False
   
   def reveal(self):
     if not self.isAlive:

@@ -77,3 +77,8 @@ class GameLineManager():
   def gameStartLine(self):
     rep = '\nそれではゲームを始めます\n'
     return rep
+
+  def gameEndLine(self):
+    rep = 'これでゲームを終了します\n' \
+          'また始める時はこのチャンネルにメンションを送信してください\n'
+    return rep

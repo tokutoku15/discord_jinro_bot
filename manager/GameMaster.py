@@ -26,10 +26,23 @@ class GameMaster():
     self.werewolfsList = [
       player for player 
       in self.playersDict.values()
-      if player.getRole().getRoleName()=='werewolf']
+      if player.getRole().amIWerewolf() ]
+    '''村人リスト'''
+    self.villagersList = [
+      player for player
+      in self.playersDict.values()
+      if not player.getRole().amIWerewolf() ]
+    '''昼の投票対象のリスト'''
+    self.votingTargetList = []
   
   def nextDay(self):
     self.dayCount += 1
+  
+  def resetActInfo(self):
+    self.resetAllPlayerHasActed()
+    for player in self.playersDict.values():
+      player.isNotProtected()
+      player.setNotWillBeKilled()
   
   def updateDispPlayer(self, author):
     playerRoleList = []
@@ -71,7 +84,7 @@ class GameMaster():
       if player.getIsAlive()
     ]
     self.deadList = [
-      '{id:>4} : {name:<12}{role}'.format(
+      '{id} : {name}{role}'.format(
         id=id, name=player.getUserName(),
         role=playerRoleList[id-1])
       for id, player in self.playersDict.items()
@@ -79,7 +92,7 @@ class GameMaster():
     ]
 
   def getDispDeadorAlive(self, author):
-    self.updateDispPlayer(author)
+    self.updateDispPlayer(author=author)
     aliveDisp = '\n'.join(self.aliveList)
     deadDisp = '\n'.join(self.deadList)
     text = '{a:=^30}\n【生存者{alive}名】\n{aliveList}\n{a:=^30}\n' \
@@ -87,6 +100,7 @@ class GameMaster():
               .format(alive=len(self.aliveList), aliveList=aliveDisp, 
                       dead=len(self.deadList), deadList=deadDisp, a='')
     return text
+  
   
   def ruleDisp(self):
     isOkorNot = lambda x: 'あり' if x else 'なし'
@@ -101,9 +115,13 @@ class GameMaster():
     return rep
   
   def nightCome(self):
-    rep = ':crescent_moon: みなさん、{day}日目の恐ろしい夜がやってきました\n' \
+    nightComeAgain = ''
+    if self.dayCount > 1:
+      nightComeAgain = '容疑者を処刑したにもかかわらず、'
+    rep = ':crescent_moon: {text}{day}日目の夜がやってきました\n' \
           'これから夜のアクションを行います\n' \
-          '夜のアクションはDMで行うことができます'.format(a='', day=self.dayCount)
+          '夜のアクションはDMで行うことができます' \
+            .format(a='', day=self.dayCount, text=nightComeAgain)
     return rep
 
   def nightAct(self, player, actsDisp):
@@ -181,7 +199,12 @@ class GameMaster():
           elif self.playersDict[targetId].getRole().getRoleName() == 'werewolf':
             return ':small_red_triangle: 人狼の仲間は選択できません\n村人陣営のプレイヤーを選択してください\n'
           player.actFinish()
-          self.playersDict[targetId].setKillFlag()
+          if self.dayCount == 1 and self.oneNightKill == False:
+            print('doubt')
+            self.playersDict[targetId].voteMe()
+          else:
+            print('will kill')
+            self.playersDict[targetId].setKillFlag()
           return ':white_check_mark: {UserName}を殺害対象に選択しました\n'.format(UserName=self.playersDict[targetId].getUserName())
         # その他
         else:
@@ -191,18 +214,24 @@ class GameMaster():
 
   def nightKill(self):
     for player in self.playersDict.values():
-      if player.getWillBeKilled() and not player.getIsProtected():
+      if player.getWillBeKilled() and player.getIsProtected() == False:
         player.kill()
+        self.villagerList.pop()
         self.killedLastNight = player
+        return
     self.killedLastNight = None
   
+  def resetVoteInfo(self):
+    self.resetAllPlayerHasVoted()
+  
   def sunRises(self):
-    maxVotedCount = -1
+    maxVotedCount = 0
     doubtfulPlayer=[]
     for player in self.playersDict.values():
+      print('{name}:{num}票'.format(name=player.getUserName(), num=player.getVotedCount()))
       if maxVotedCount < player.getVotedCount():
+        maxVotedCount = player.getVotedCount()
         doubtfulPlayer.clear()
-        maxVoted = player.getVotedCount()
         doubtfulPlayer.append(player)
       elif maxVotedCount == player.getVotedCount():
         doubtfulPlayer.append(player)
@@ -210,27 +239,146 @@ class GameMaster():
       '{name}'.format(name=player.getUserName())
       for player in doubtfulPlayer
     ])
-    text = '{a:=^30}恐ろしい夜が明け、{day}日目の朝がやってきました\n\n昨晩の犠牲者は・・・\n\n'.format(a='',day=self.dayCount)
+    text = '{a:=^30}\n夜が明け、{day}日目の朝がやってきました\n\n昨夜の犠牲者は\n\n'.format(a='',day=self.dayCount) 
     if self.killedLastNight != None:
-      text += '{player}です\n'.format(player=self.killedLastNight.getUserName())
+      text += '{player}\nです\n以後、ゲーム終了まで話してはいけません\n'.format(player=self.killedLastNight.getUserName())
     else:
-      text += 'いませんでした！人狼は静かに身を潜めたようです\n'
-    text += 'そして、にわかに怪しいと思われる人物が浮上しました\n\n'
-    text += 'その人物は・・・\n{doubt}\nです\n\n'.format(doubt=doubtfulPlayers)
-    text += 'それでは今から人狼を見つけるために話し合いを行ってください\n'
+      text += 'いませんでした!人狼は静かに身を潜めたようです\n'
+    text += 'そして、にわかに怪しいと思われる人物が浮上しました\n\n' \
+            'その人物は\n{doubt}\nです\n\n' \
+            'それでは今から人狼を見つけるために話し合いを行ってください\n' \
+              .format(doubt=doubtfulPlayers)
     return text
   
   def finishDiscussion(self):
-    text = '話し合いは終了です\n陽は暮れて、今日もひとり容疑者を処分する時間が訪れました\n' \
-           'DMで投票を行ってください\n'
+    text = '{a:=^30}\n話し合いは終了です\n' \
+           '陽は暮れて、今日もひとり容疑者を処分する時間が訪れました\n' \
+           'DMで投票を行ってください\n'.format(a='')
     return text
 
-
-  def vote(self, player, target):
-    pass
+  def updateDispVotingTarget(self):
+    self.votingTargetList.clear()
+    if self.checkAllPlayerHasVoted():
+      maxVotedCount = 0
+      for id, player in self.playersDict.items():
+        if maxVotedCount < player.getVotedCount():
+          maxVotedCount = player.getVotedCount()
+          self.votingTargetList.clear()
+          self.votingTargetList.append('{id} : {name}' \
+            .format(id=id,name=player.getUserName()))
+        elif maxVotedCount == player.getVotedCount():
+          self.votingTargetList.append('{id} : {name}' \
+            .format(id=id,name=player.getUserName()))
+    else:
+      self.votingTargetList = [
+        '{id} : {name}'.format(id=id, name=player.getUserName())
+        for id, player in self.playersDict.items()
+        if player.getIsAlive()
+      ]
   
-  def gameset(self):
+  def getVotingTarget(self):
+    return self.votingTargetList
+
+  def dayVoteAgain(self):
+    text = '{a:=^30}\n最多票数が複数名いたので決選投票を行います\n' \
+           'DMで再度投票を行ってください\n'.format(a='')
+    return text
+
+  def dayVote(self, actsDisp):
+    votingTarget = self.getDispCanVotingTarget()
+    text = '{votingTargetList}\n投票対象は以上の{num}名です\n' \
+           '今晩処刑するプレイヤーを選択してください\n' \
+           '"/vote (対象のプレイヤーID)" で投票することができます\n' \
+            .format(votingTargetList=votingTarget, num=len(self.votingTargetList))
+    return text
+  
+  def getDispCanVotingTarget(self):
+    self.updateDispVotingTarget()
+    votingTargetDisp = '\n'.join(self.votingTargetList)
+    text = '{a:=^30}\n{aliveList}\n{a:=^30}\n' \
+            .format(aliveList=votingTargetDisp, a='')
+    return text
+
+  def vote(self, author, targetId):
+    for id, player in self.playersDict.items():
+      if author.getUserId() == player.getUserId():
+        if targetId > len(self.playersDict):
+          return ':small_red_triangle: 対象のプレイヤーIDが存在しません\n'
+        if targetId == id:
+          return ':small_red_triangle: 自分を投票の対象にできません\n'
+        if player.getHasVoted():
+          return ':small_red_triangle: もう投票を終えています\n'
+        if not self.playersDict[targetId].getIsAlive():
+          return ':small_red_triangle: 死亡者を投票の対象にできません\n'
+        player.finishVoted()
+        self.playersDict[targetId].voteMe()
+        print(self.playersDict[targetId].getUserName() + 'に{num}票'.format(num=self.playersDict[targetId].getVotedCount()))
+        return ':white_check_mark: {UserName}に投票しました\n'.format(UserName=self.playersDict[targetId].getUserName())
+
+  def dayExecute(self):
+    maxVotedCount = 0
+    executePlayer = None
+    for player in self.playersDict.values():
+      print('{name}:{num}票'.format(name=player.getUserName(), num=player.getVotedCount()))
+      if maxVotedCount < player.getVotedCount():
+        maxVotedCount = player.getVotedCount()
+        executePlayer = player
+    player.kill()
+    if player.getRole().amIWerewolf():
+      self.werewolfsList.pop()
+    else:
+      self.villagersList.pop()
+    return '投票の結果、本日処刑されるプレイヤーは\n ' \
+           '{name}です\n' \
+           '以後、ゲーム終了まで話してはいけません\n'.format(name=player.getUserName())
+  
+  def isGameset(self):
+    '''
+    昼の処刑終了時
+    ・処刑後人狼が0になった場合->村人勝利
+    ・村人の数=人狼の数になった場合->人狼勝利
+    夜のアクション
+    ・村人の数=人狼の数になった場合->人狼勝利
+    '''
+    text = ''
+    if len(self.werewolfsList) == 0:
+      text += '村人陣営の勝利です\n'
+      return text, 'villagerCamp'
+    elif len(self.werewolfsList) >= len(self.villagersList):
+      text += '人狼陣営の勝利です\n'
+      return text, 'werewolfCamp'
+    return text, None
     pass
+
+  def getDispResultPlayer(self, serif, winner):
+    text = serif
+    isAlive = lambda x: '生存' if x else '死亡'
+    villagerCampList = [
+      '{name}:man:[{role}]({isAlive})' \
+        .format(name=player.getUserName(),
+          role=player.getRole().getDispName(),
+          isAlive=isAlive(player.getIsAlive()))
+      for player in self.playersDict.values()
+      if not player.getRole().amIWerewolf()
+    ]
+    werewolfCampList = [
+      '{name}:wolf:[{role}]({isAlive})' \
+        .format(name=player.getUserName(),
+          role=player.getRole().getDispName(),
+          isAlive=isAlive(player.getIsAlive()))
+      for player in self.playersDict.values()
+      if player.getRole().amIWerewolf()
+    ]
+    villagerCampDisp = '\n'.join(villagerCampList)
+    werewolfCampDisp = '\n'.join(werewolfCampList)
+    text += '{a:=^30}\n【勝者】\n'.format(a='')
+    if winner == 'villagerCamp':
+      text += '{winner}\n{a:=^30}\n【敗者】\n{loser}\n{a:=^30}\n' \
+        .format(winner=villagerCampDisp,loser=werewolfCampDisp,a='')
+    elif winner == 'werewolfCamp':
+      text += '{winner}\n{a:=^30}\n【敗者】\n{loser}\n{a:=^30}\n' \
+        .format(winner=werewolfCampDisp,loser=villagerCampDisp,a='')
+    return text
 
   def checkAllPlayerHasActed(self):
     for player in self.playersDict.values():
@@ -238,8 +386,18 @@ class GameMaster():
         return False
     return True
   
+  def resetAllPlayerHasActed(self):
+    for player in self.playersDict.values():
+      player.resetActed()
+      player.resetVotedCount()
+  
   def checkAllPlayerHasVoted(self):
     for player in self.playersDict.values():
-      if not player.gethasVoted():
+      if not player.getHasVoted():
         return False
     return True
+  
+  def resetAllPlayerHasVoted(self):
+    for player in self.playersDict.values():
+      player.resetHasVoted()
+      player.resetVotedCount()

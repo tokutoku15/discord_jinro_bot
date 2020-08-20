@@ -31,8 +31,11 @@ class PlayerManager():
     return text
   
   def addPlayer(self, pname, userId):
-    self.playerlist.append(Player(pname, userId))
-    self.updatePlayer()
+    if self.isUserIdInPlayerDict(userId):
+      pass
+    else:
+      self.playerlist.append(Player(pname, userId))
+      self.updatePlayer()
   
   def getPlayerNum(self):
     return len(self.playerIdDict)
