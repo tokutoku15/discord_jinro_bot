@@ -84,7 +84,7 @@ class GameMaster():
       if player.getIsAlive()
     ]
     self.deadList = [
-      '{id} : {name}{role}'.format(
+      '{id:>4} : {name}{role}'.format(
         id=id, name=player.getUserName(),
         role=playerRoleList[id-1])
       for id, player in self.playersDict.items()
@@ -221,9 +221,6 @@ class GameMaster():
         return
     self.killedLastNight = None
   
-  def resetVoteInfo(self):
-    self.resetAllPlayerHasVoted()
-  
   def sunRises(self):
     maxVotedCount = 0
     doubtfulPlayer=[]
@@ -323,14 +320,12 @@ class GameMaster():
       if maxVotedCount < player.getVotedCount():
         maxVotedCount = player.getVotedCount()
         executePlayer = player
-    player.kill()
-    if player.getRole().amIWerewolf():
-      self.werewolfsList.pop()
-    else:
-      self.villagersList.pop()
+    for player in self.playersDict.values():
+      if player.getUserId() == executePlayer.getUserId():
+        player.kill()
     return '投票の結果、本日処刑されるプレイヤーは\n ' \
            '{name}です\n' \
-           '以後、ゲーム終了まで話してはいけません\n'.format(name=player.getUserName())
+           '以後、ゲーム終了まで話してはいけません\n'.format(name=executePlayer.getUserName())
   
   def isGameset(self):
     '''
@@ -341,10 +336,17 @@ class GameMaster():
     ・村人の数=人狼の数になった場合->人狼勝利
     '''
     text = ''
-    if len(self.werewolfsList) == 0:
+    numWerewolf = 0
+    numVillager = 0
+    for player in self.playersDict.values():
+      if player.getIsAlive() and player.getRole().amIWerewolf():
+        numWerewolf += 1
+      elif player.getIsAlive() and not player.getRole().amIWerewolf():
+        numVillager += 1
+    if numWerewolf == 0:
       text += '村人陣営の勝利です\n'
       return text, 'villagerCamp'
-    elif len(self.werewolfsList) >= len(self.villagersList):
+    elif numWerewolf >= numVillager:
       text += '人狼陣営の勝利です\n'
       return text, 'werewolfCamp'
     return text, None
@@ -352,7 +354,7 @@ class GameMaster():
 
   def getDispResultPlayer(self, serif, winner):
     text = serif
-    isAlive = lambda x: '生存' if x else '死亡'
+    isAlive = lambda x: '生存' if x else '死亡:skull_crossbones:'
     villagerCampList = [
       '{name}:man:[{role}]({isAlive})' \
         .format(name=player.getUserName(),

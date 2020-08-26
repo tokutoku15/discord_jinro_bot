@@ -51,6 +51,9 @@ class gameClient(discord.Client):
           await message.channel.send('人狼ゲームを始める時は{0}チャンネルでメンションしてね'.format(self.get_channel(self.channel_id)))
     else:
       if self.user != message.author:
+        print(self.user)
+        print(message.author)
+        print()
         if self.check_text_channel_id(message.channel.id):
           if self.phaseController.getPhase() == phase[1]:
               await self.joinPhase(message)
@@ -109,7 +112,7 @@ class gameClient(discord.Client):
       await self.sendRoleList(message.channel)
   
   async def join(self, message):
-    self.playerManager.addPlayer(f'{message.author}', message.author.id)
+    self.playerManager.addPlayer(f'{message.author.display_name}', message.author.id)
     dm = await message.author.create_dm()
     self.playerManager.registerDM(message.author.id, dm)
     rep = self.gameLineManager.joinLine(message.author, self.playerManager.getPlayersDisplay())
@@ -150,6 +153,7 @@ class gameClient(discord.Client):
   
   async def assignRole(self, channel):
     isWerewolf = lambda x: '(人狼陣営):wolf:' if x else '(村人陣営):man:'
+    sleep(3)
     for player in self.playerManager.getPlayerIdDict().values():
       user = self.get_user(player.getUserId())
       pay = self.gameLineManager.assignRoleLine(
@@ -188,14 +192,18 @@ class gameClient(discord.Client):
     text += self.gameMaster.ruleDisp()
     text += self.gameMaster.nightCome()
     await self.jinroChannel.send(text)
+    # sleep(2*60)
     await self.requestNightAct()
   
   async def nightPhase(self):
     text = self.gameMaster.nightCome()
     await self.jinroChannel.send(text)
+    # sleep(2*60)
     await self.requestNightAct()
   
   async def requestNightAct(self):
+    self.gameMaster.resetAllPlayerHasVoted()
+    self.gameMaster.resetAllPlayerHasActed()
     actsDisp = self.availableCommands['night'][0]
     for player in self.playerManager.getPlayerIdDict().values():
       text = self.gameMaster.getDispDeadorAlive(player)
@@ -206,7 +214,6 @@ class gameClient(discord.Client):
   '''昼のフェーズ'''
   async def dayPhase(self):
     text = self.gameMaster.sunRises()
-    self.gameMaster.resetActInfo()
     await self.jinroChannel.send(text)
     text = self.gameMaster.finishDiscussion()
     await self.jinroChannel.send(text)
@@ -215,7 +222,7 @@ class gameClient(discord.Client):
   async def requestDayVote(self):
     actsDisp = self.availableCommands['day'][0]
     text = self.gameMaster.dayVote(actsDisp)
-    self.gameMaster.resetVoteInfo()
+    self.gameMaster.resetAllPlayerHasVoted()
     for player in self.playerManager.getPlayerIdDict().values():
       await player.getDM().send(text)
     self.acceptAct()
@@ -241,6 +248,11 @@ class gameClient(discord.Client):
     self.initialize()
     self.phaseController.pause()
   
+  async def sendGameResult(self, resultText):
+    self.phaseController.result()
+    text = resultText
+    await self.jinroChannel.send(text)
+
   '''アクションを受け取った時の処理'''
   async def receiveAct(self, message):
     if not self.getIsAcceptAct():
@@ -315,8 +327,3 @@ class gameClient(discord.Client):
     except ValueError:
       text += 'プレイヤーIDを選択してください\n'
     return text
-  
-  async def sendGameResult(self, resultText):
-    self.phaseController.result()
-    text = resultText
-    await self.jinroChannel.send(text)
