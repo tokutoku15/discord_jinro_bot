@@ -60,8 +60,7 @@ class GameMaster():
     if self.jinroChannel != message.channel:
       return
     if self.gameStateManagr.nowState() != 'pause':
-      err = '今は{state}中です\n/setupコマンドは使用できません' \
-              .format(state=self.stateDisp[self.gameStateManagr.nowState()])
+      err = self.getPhaseDisp() + '/setupコマンドは使用できません'
       return err
     self.gameStateManagr.gameSetup()
     author = message.author
