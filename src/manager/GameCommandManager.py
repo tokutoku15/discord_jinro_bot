@@ -5,8 +5,8 @@ from src.GM.GameMaster import GameMaster
 '''
 class GameCommandManager():
 
-  def __init__(self, jinroChannel):
-    self.GM = GameMaster(jinroChannel)
+  def __init__(self, gameChannel):
+    self.GM = GameMaster(gameChannel)
     self.isAccept = True
     self.commands = {
       '/setup'  : self.setup,
@@ -44,7 +44,8 @@ class GameCommandManager():
     return ret
   
   def start(self, message):
-    pass
+    ret = self.GM.start(message)
+    return ret
 
   '''
   ゲームアクションコマンド
@@ -68,9 +69,9 @@ class GameCommandManager():
   def readyAccept(self):
     self.isAccept = True
 
-  def parseMesAndRunCmd(self, message, ret=None):
+  def parseMesAndRunCmd(self, message, ret=None, notification=None):
     mes = message.content.split(' ')
     if mes[0] in self.commands:
-      ret = self.commands[mes[0]](message)
-    return ret
+      ret, notification = self.commands[mes[0]](message)
+    return ret, notification
     

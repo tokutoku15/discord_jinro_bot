@@ -29,3 +29,10 @@ class JobManager():
     for i, job in enumerate(list(self.jobNumList.keys())):
       if jobId == i:
         self.jobNumList[job] = num
+  
+  def getJobStack(self):
+    jobStack = []
+    for job, num in self.jobNumList.items():
+      for _ in range(num):
+        jobStack.append(job)
+    return jobStack

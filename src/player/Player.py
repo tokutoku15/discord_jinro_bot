@@ -13,8 +13,11 @@ class Player():
     '''人狼の殺害対象'''
     self.willBeKilled = False
   
-  def giveDiscRole(self, discRole):
-    self.discRole = discRole
+  def giveDiscRole(self, discRoleName):
+    self.discRoleName = discRoleName
+  
+  def giveJob(self, job):
+    self.job = job
   
   def vote(self):
     self.hasVoted = True
@@ -38,3 +41,6 @@ class Player():
   
   def voteMe(self):
     self.votedCount += 1
+  
+  def giveChannel(self, channel):
+    self.myChannel = channel

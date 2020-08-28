@@ -16,7 +16,7 @@ class PlayerManager():
     if len(self.playerList) == 0:
       text += '参加者0人!'
     else:
-      plist = '>\n<@!'.join([
+      plist = '> <@!'.join([
         str(userId)
         for userId in self.playerList.keys()
         ])
