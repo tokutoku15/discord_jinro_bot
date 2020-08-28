@@ -5,7 +5,7 @@ class Villager(Job):
   def __init__(self):
     super().__init__()
     super().setJobName('villager')
-    super().setJobDispName('***村人***')
+    super().setJobDispName('**村人**')
     super().setWerewolf(False)
   
   def act(self, targetId):

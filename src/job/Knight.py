@@ -5,7 +5,7 @@ class Knight(Job):
   def __init__(self):
     super().__init__()
     super().setJobName('knight')
-    super().setJobDispName('***騎士***')
+    super().setJobDispName('**騎士**')
     super().setWerewolf(False)
   
   def act(self, targetId):

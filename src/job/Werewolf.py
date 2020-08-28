@@ -5,7 +5,7 @@ class Werewolf(Job):
   def __init__(self):
     super().__init__()
     super().setJobName('werewolf')
-    super().setJobDispName('***人狼***')
+    super().setJobDispName('**人狼**')
     super().setWerewolf(False)
   
   def act(self, targetId):

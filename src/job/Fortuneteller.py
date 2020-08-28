@@ -5,7 +5,7 @@ class Fortuneteller(Job):
   def __init__(self):
     super().__init__()
     super().setJobName('fortuneteller')
-    super().setJobDispName('***占い師***')
+    super().setJobDispName('**占い師**')
     super().setWerewolf(False)
   
   def act(self, targetId):

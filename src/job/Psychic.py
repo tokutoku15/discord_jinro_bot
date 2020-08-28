@@ -5,7 +5,7 @@ class Psychic(Job):
   def __init__(self):
     super().__init__()
     super().setJobName('psychic')
-    super().setJobDispName('***霊媒師***')
+    super().setJobDispName('**霊媒師**')
     super().setWerewolf(False)
   
   def act(self, targetId):

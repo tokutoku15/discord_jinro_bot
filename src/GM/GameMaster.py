@@ -66,14 +66,12 @@ class GameMaster():
     self.gameStateManagr.gameSetup()
     author = message.author
     self.playerManager.addPlayer(author.display_name, author.id)
-    description = "<@!{userId}>からゲーム開始が提案されました\n" \
-                  "・/join コマンド   : ゲームへ参加\n" \
-                  "・/exit コマンド   : ゲームから退出\n" \
-                  "・/option コマンド : オプションの変更\n" \
-                  "・/job コマンド    : 役職の人数の変更\n" \
-                  "・/start コマンド  : ゲームの開始\n" \
-                  "・/help コマンド   : 利用可能なコマンドの確認\n" \
+    description = "<@!{userId}>からゲーム開始が提案されました\n利用可能なコマンド\n" \
                     .format(userId = author.id)
+    description += '\n'.join([
+      '{cmd} : {desc}'.format(cmd=cmd,desc=desc)
+      for cmd, desc in self.stateDisp['setup']['commands'].items()
+    ])
     ret = self.gameOptDisp(description=description)
     return ret
   
