@@ -1,12 +1,10 @@
-from gameClient import gameClient
+from src.JinroClient import JinroClient
 
 f = open('secret/.env')
 env = f.read().split('\n')
 f.close()
 
-TOKEN = env[0]
-CHANNEL_ID = int(env[1])
+BOT_TOKEN = env[0]
 
-client = gameClient()
-client.set_text_channel_id(CHANNEL_ID)
-client.run(TOKEN)
+client = JinroClient()
+client.run(BOT_TOKEN)

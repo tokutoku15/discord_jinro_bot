@@ -4,11 +4,17 @@ class EmojiManager():
     self.emojiIdDict = {}
   
   '''
-  emojiName : str
-  emojiId   : int
+  emojiName : str class
+  emojiId   : Emoji class
   '''
-  def registerEmoji(self, emojiName, emojiId):
-    self.emojiIdDict[emojiName] = emojiId
+  def registerEmoji(self, emojiList):
+    for emoji in emojiList:
+      if emoji.name == 'werewolf':
+        self.emojiIdDict[emoji.name] = emoji
+      if emoji.name == 'knight':
+        self.emojiIdDict[emoji.name] = emoji
+      if emoji.name == 'fortuneteller':
+        self.emojiIdDict[emoji.name] = emoji
   
   def getEmojiDict(self):
     return self.emojiIdDict
