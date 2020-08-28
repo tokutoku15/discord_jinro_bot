@@ -11,7 +11,7 @@ class PlayerManager():
   def removePlayer(self, userId):
     self.playerList.pop(userId)
   
-  def getPlayersDisp(self):
+  def getPlayersListDisp(self):
     text = ''
     if len(self.playerList) == 0:
       text += '参加者0人!'

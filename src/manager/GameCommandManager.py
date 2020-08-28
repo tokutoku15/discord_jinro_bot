@@ -12,7 +12,8 @@ class GameCommandManager():
       '/setup'  : self.setup,
       '/join'   : self.join,
       '/exit'   : self.exit,
-      '/setting': self.setting,
+      '/option' : self.option,
+      '/job'    : self.job,
       '/start'  : self.start,
       '/vote'   : self.vote,
       '/act'    : self.act,
@@ -34,8 +35,12 @@ class GameCommandManager():
     ret = self.GM.exit(message)
     return ret
   
-  def setting(self, message):
-    ret = self.GM.setting(message)
+  def option(self, message):
+    ret = self.GM.option(message)
+    return ret
+  
+  def job(self, message):
+    ret = self.GM.job(message)
     return ret
   
   def start(self, message):
