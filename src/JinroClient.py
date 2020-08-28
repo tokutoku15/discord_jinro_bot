@@ -12,7 +12,7 @@ class JinroClient(discord.Client):
     self.gameChannel = await self.createJinroChannel("開発")
     self.emojiManger = EmojiManager()
     self.emojiManger.registerEmoji(self.gameGuild.emojis)
-    self.initialize()
+    await self.initialize()
     print(self.user.name)
     print(self.user.id)
     print('---------------')
@@ -36,14 +36,35 @@ class JinroClient(discord.Client):
       if notification == 'start':
         print('テキストチャンネル作成')
         await self.createAllPlayersChannel()
+        await self.sendComeNightText()
 
   '''
-  ゲーム情報の初期化を行う
+  ゲーム情報の初期化
   '''
-  def initialize(self):
-    self.isSetupInfo = False
+  async def initialize(self):
     self.gameCommandManager = GameCommandManager(self.gameChannel)
+    self.GM = self.gameCommandManager.GM
+    await self.deleteChannel('人狼陣営')
   
+  '''
+  ゲームテキストの送信
+  '''
+  async def sendComeNightText(self):
+    werewolfText = 'ここは人狼陣営専用のテキストチャンネルです\n' \
+                   '誰を襲撃するかなどチャットスペースとして利用できます\n'
+    await self.werewolfChannel.send(werewolfText)
+    embed = self.GM.comeNightText()
+    await self.gameChannel.send(embed=embed)
+    for player in self.GM.playerManager.playerList.values():
+      channel = player.myChannel
+      job = player.job
+      await channel.send(job.requestAct(self.emojiManger.emojiIdDict))
+      embed = self.GM.gamePlayerDisp()
+      await channel.send(embed=embed)
+  
+  '''
+  ギルド(サーバ)、チャンネル、ロールの管理
+  '''
   async def creategameGuild(self, name):
     guild = discord.utils.get(self.guilds, name=name)
     return guild
@@ -56,32 +77,39 @@ class JinroClient(discord.Client):
   
   async def createAllPlayersChannel(self):
     werewolfs = []
-    for userId, player in self.gameCommandManager.GM.playerManager.playerList.items():
+    for userId, player in self.GM.playerManager.playerList.items():
       roles = []
       user = self.gameGuild.get_member(userId)
       guildRole = discord.utils.get(self.gameGuild.roles, name=player.discRoleName)
       if guildRole is None:
-        role = await self.gameGuild.create_role(name=player.discRoleName)
+        guildRole = await self.gameGuild.create_role(name=player.discRoleName)
       userRole = discord.utils.get(user.roles, name=player.discRoleName)
       if userRole is None:
-        await user.add_roles(role)
+        await user.add_roles(guildRole)
+      roles.append(guildRole)
       if player.job.isWerewolf:
-        werewolfs.append(role)
+        werewolfs.append(guildRole)
       channel = discord.utils.get(self.gameGuild.channels, name=player.discRoleName)
-      if channel is not None:
-        continue
-      roles.append(role)
-      channel = await self.createPrivateChannel(roles, player.discRoleName)
+      if channel is None:
+        channel = await self.createPrivateChannel(roles, player.discRoleName)
+      player.giveDiscRoleId(guildRole.id)
       player.giveChannel(channel)
     self.werewolfChannel = await self.createPrivateChannel(werewolfs, '人狼陣営')
   
-  async def createPrivateChannel(self, roles, channelName):
+  async def createPrivateChannel(self, playerRoles, channelName):
     botRole = discord.utils.get(self.gameGuild.roles, name="jinro_bot")
     overwrites = {
       self.gameGuild.default_role : discord.PermissionOverwrite(read_messages=False),
       botRole : discord.PermissionOverwrite(read_messages=True),
     }
-    for role in roles:
+    print(id(playerRoles))
+    for role in playerRoles:
       overwrites[role] = discord.PermissionOverwrite(read_messages=True)
+    print(overwrites)
     channel = await self.gameGuild.create_text_channel(name=channelName, overwrites=overwrites)
     return channel
+  
+  async def deleteChannel(self, channelName):
+    for channel in self.gameGuild.channels:
+      if channel.name == channelName:
+        await channel.delete()

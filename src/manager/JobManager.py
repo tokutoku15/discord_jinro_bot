@@ -20,7 +20,7 @@ class JobManager():
       '[{jobId}]{jobName} : `{num}`人' \
         .format(jobId=jobId, jobName=job.jobDispName, num=self.jobNumList[job])
         for jobId, job in enumerate(list(self.jobNumList.keys()))
-      ])
+    ])
     return text
   
   def setJobNum(self, jobId, num):

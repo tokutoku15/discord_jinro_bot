@@ -16,10 +16,33 @@ class PlayerManager():
     if len(self.playerList) == 0:
       text += '参加者0人!'
     else:
-      plist = '> <@!'.join([
+      plist = '>\n<@!'.join([
         str(userId)
         for userId in self.playerList.keys()
-        ])
+      ])
       text += '<@!{}>'.format(plist)
     return text
   
+  def getAlivePlayerRolesListDisp(self):
+    text = ''
+    plist = '>\n<@&'.join([
+      str(player.roleId)
+      for player in self.playerList.values()
+      if player.isAlive
+    ])
+    text += '<@&{}>'.format(plist)
+    return text
+
+  def getDeathPlayerRolesListDisp(self):
+    text = ''
+    deathList = [
+      str(player.roleId)
+      for player in self.playerList.values()
+      if not player.isAlive
+    ]
+    if len(deathList) == 0:
+      text += 'なし'
+    else:
+      plist = '>\n<@&'.join(deathList)
+      text += '<@&{}>'.format(plist)
+    return text

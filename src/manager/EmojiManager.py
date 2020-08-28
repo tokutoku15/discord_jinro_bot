@@ -15,6 +15,10 @@ class EmojiManager():
         self.emojiIdDict[emoji.name] = emoji
       if emoji.name == 'fortuneteller':
         self.emojiIdDict[emoji.name] = emoji
+      if emoji.name == 'psychic':
+        self.emojiIdDict[emoji.name] = emoji
+      if emoji.name == 'villager':
+        self.emojiIdDict[emoji.name] = emoji
   
   def getEmojiDict(self):
     return self.emojiIdDict

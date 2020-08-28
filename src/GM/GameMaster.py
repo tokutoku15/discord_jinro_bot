@@ -21,6 +21,7 @@ class GameMaster():
           '/join':'ゲームへ参加', 
           '/exit':'ゲームから退出', 
           '/option':'オプションの変更',
+          '/time' : '話し合いの時間の変更',
           '/job':'役職の人数の変更', 
           '/start':'ゲームの開始'
         }
@@ -51,19 +52,28 @@ class GameMaster():
     self.initialize()
 
   def initialize(self):
-    self.gameStateManagr = GameStateManager()
+    self.dayCount = 1
+    self.discussTime = 5
+    self.gameStateManager = GameStateManager()
     self.playerManager = PlayerManager()
     self.jobManager = JobManager()
     self.oneNightKill = False
     self.oneNightReveal = False
   
+  '''
+  コマンド毎の処理
+  エラーハンドリング時
+  return err, 'error'
+  成功時
+  return ret, 'command_name'
+  '''
   def setup(self, message):
     if self.gameChannel != message.channel:
       return None, 'error'
-    if self.gameStateManagr.nowState() != 'pause':
+    if self.gameStateManager.nowState() != 'pause':
       err = self.getPhaseDisp() + '/setupコマンドは使用できません'
       return err, 'error'
-    self.gameStateManagr.gameSetup()
+    self.gameStateManager.gameSetup()
     author = message.author
     self.playerManager.addPlayer(author.display_name, author.id)
     description = "<@!{userId}>からゲーム開始が提案されました\n利用可能なコマンド\n" \
@@ -75,10 +85,11 @@ class GameMaster():
     ret = self.gameOptDisp(description=description)
     return ret, 'setup'
   
+  '''joinコマンド'''
   def join(self, message):
     if self.gameChannel != message.channel:
       return None, 'error'
-    if self.gameStateManagr.nowState() != 'setup':
+    if self.gameStateManager.nowState() != 'setup':
       err = self.getPhaseDisp()+'/joinコマンドは使用できません'
       return err, 'error'
     author = message.author
@@ -88,10 +99,11 @@ class GameMaster():
     ret = self.gameOptDisp(description=description)
     return ret, 'join'
   
+  '''exitコマンド'''
   def exit(self, message):
     if self.gameChannel != message.channel:
       return None, 'error'
-    if self.gameStateManagr.nowState() != 'setup':
+    if self.gameStateManager.nowState() != 'setup':
       err = self.getPhaseDisp()+'/exitコマンドは使用できません'
       return err, 'error'
     author = message.author
@@ -101,10 +113,11 @@ class GameMaster():
     ret = self.gameOptDisp(description=description)
     return ret, 'exit'
   
+  '''optionコマンド'''
   def option(self, message):
     if self.gameChannel != message.channel:
       return None, 'error'
-    if self.gameStateManagr.nowState() != 'setup':
+    if self.gameStateManager.nowState() != 'setup':
       err = self.getPhaseDisp()+'/optionコマンドは使用できません'
       return err, 'error'
     mes = message.content.split(' ')
@@ -133,10 +146,31 @@ class GameMaster():
     ret = self.gameOptDisp()
     return ret, 'option'
   
+  '''timeコマンド'''
+  def time(self, message):
+    if self.gameChannel != message.channel:
+      return None, 'error'
+    if self.gameStateManager.nowState() != 'setup':
+      err = self.getPhaseDisp()+'/timeコマンドは使用できません'
+      return err, 'error'
+    mes = message.content.split(' ')
+    err = '時間を正しく設定できていません\n' \
+          '/time [時間(分)] で話し合いの時間を設定してください(最大20分、最小1分)\n' \
+          '例: 話し合いの時間を3分にしたい時\n' \
+          '**/time 3**'
+    if len(mes) != 2:
+      return err, 'error'
+    if int(mes[1]) <= 0 or 20 <= int(mes[1]):
+      return err, 'error'
+    self.discussTime = int(mes[1])
+    embed = self.gameOptDisp()
+    return embed, 'time'
+  
+  '''jobコマンド'''
   def job(self, message):
     if self.gameChannel != message.channel:
       return None, 'error'
-    if self.gameStateManagr.nowState() != 'setup':
+    if self.gameStateManager.nowState() != 'setup':
       err = self.getPhaseDisp()+'/jobコマンドは使用できません'
       return err, 'error'
     mes = message.content.split(' ')
@@ -158,10 +192,11 @@ class GameMaster():
     ret = self.gameOptDisp()
     return ret, 'job'
   
+  '''startコマンド'''
   def start(self, message):
     if self.gameChannel != message.channel:
       return None, 'error'
-    if self.gameStateManagr.nowState() != 'setup':
+    if self.gameStateManager.nowState() != 'setup':
       err = self.getPhaseDisp()+'/startコマンドは使用できません'
       return err, 'error'
     jobNumSum = sum(list(self.jobManager.jobNumList.values()))
@@ -171,9 +206,11 @@ class GameMaster():
             '/jobコマンドで役職の人数を変更してください\n'
       return err, 'error'
     ret = '役職の割り振りとチャンネルの作成を行います\n'
+    self.gameStateManager.nightCome()
     self.giveRoleAndJob()
     return ret, 'start'
     
+  '''helpコマンド'''
   def help(self, message):
     if self.gameChannel != message.channel:
       return None, 'error'
@@ -190,19 +227,21 @@ class GameMaster():
       embed.add_field(name=self.stateDisp[phase]['display'], value=text, inline=False)
     return embed, 'help'
 
+  '''
+  ユーティリティ関数
+  '''
   def giveRoleAndJob(self):
     for player in self.playerManager.playerList.values():
       roleName = 'player-{}'.format(player.name)
       jobs = self.jobManager.getJobStack()
-      print(roleName)
-      print(jobs)
       random.shuffle(jobs)
       player.giveDiscRole(roleName)
       player.giveJob(jobs.pop(0))
 
   def getPhaseDisp(self):
-    phase = self.gameStateManagr.nowState()
-    text = '今のフェーズは{phase}です\n'.format(phase=phase)
+    phase = self.gameStateManager.nowState()
+    phaseText = self.stateDisp[phase]['display']
+    text = '今のフェーズは{phase}です\n'.format(phase=phaseText)
     return text
 
   def gameOptDisp(self, **kwargs):
@@ -215,18 +254,55 @@ class GameMaster():
     oneNightKill = '`[{}]`ON\n`[{}]`OFF' \
       .format(checkMark(self.oneNightKill), 
               checkMark(not self.oneNightKill))
-    embed.add_field(name='[1]第一夜の殺害', value=oneNightKill, inline=True)
+    embed.add_field(name='[1]第1夜の殺害', value=oneNightKill, inline=True)
 
     oneNightReveal = '`[{}]`ON\n`[{}]`OFF' \
       .format(checkMark(self.oneNightReveal), 
               checkMark(not self.oneNightReveal))
-    embed.add_field(name='[2]第一夜の占い', value=oneNightReveal, inline=True)
+    embed.add_field(name='[2]第1夜の占い', value=oneNightReveal, inline=True)
+
+    discussTime = '{}分00秒'.format(self.discussTime)
+    embed.add_field(name='話し合いの時間', value=discussTime, inline=True)
 
     jobNumList = self.jobManager.getJobDispList()
-    print(jobNumList)
     embed.add_field(name="役職リスト", value=jobNumList, inline=True)
     
     joiners = self.playerManager.getPlayersListDisp()
     embed.add_field(name='参加者', value=joiners, inline=True)
     return embed
+  
+  def gamePlayerDisp(self):
+    phaseColor = lambda phase: 0x7578bd if phase=='playing_night' else 0xfba779
+    embed = discord.Embed(title='プレイヤーリスト', color=phaseColor(self.gameStateManager.nowState()))
+    aliveList = self.playerManager.getAlivePlayerRolesListDisp()
+    embed.add_field(name='生存者', value=aliveList, inline=True)
+    deathList = self.playerManager.getDeathPlayerRolesListDisp()
+    embed.add_field(name='死亡者', value=deathList, inline=True)
+    return embed
 
+  '''
+  ゲームマスターのテキスト
+  '''
+  def comeNightText(self):
+    title = '###{}日目の夜###'.format(self.dayCount)
+    text = ''
+    if self.dayCount == 1:
+      text += 'みなさん、恐ろしい夜がやってきました\n'
+    else:
+      text += '容疑者を処刑したにもかかわらず、恐ろしい夜がまたやってきました\n'
+    text += 'これから夜のアクションを行います\n' \
+            'プライベートチャンネルでアクションを行ってください\n'
+    embed = discord.Embed(title=title, description=text, color=0x7578bd)
+    return embed
+  
+  def nextDay(self):
+    self.gameStateManager.nextDay()
+    self.dayCount += 1
+    title = '###{}日目の朝###'.format(self.dayCoutnt)
+    text = '夜が明けました\n昨夜処刑されたプレイヤーは\n'
+
+  def requestNightActText(self):
+    pass
+
+  def requestVoteText(self):
+    pass

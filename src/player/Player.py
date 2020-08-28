@@ -4,6 +4,7 @@ class Player():
     self.hasVoted = False
     self.hasActed = False
     self.votedCount = 0
+    self.isAlive = True
     '''占い師の占い対象'''
     self.isRevealed = False
     '''騎士の護衛対象'''
@@ -15,6 +16,9 @@ class Player():
   
   def giveDiscRole(self, discRoleName):
     self.discRoleName = discRoleName
+  
+  def giveDiscRoleId(self, roleId):
+    self.roleId = roleId
   
   def giveJob(self, job):
     self.job = job
@@ -31,6 +35,15 @@ class Player():
   def resetAct(self):
     self.hasActed = False
   
+  def protect(self):
+    self.isProtected = True
+  
+  def willKill(self):
+    self.willBeKilled = True
+
+  def killMe(self):
+    self.isAlive = False
+
   def nextDay(self):
     self.willBeKilled = False
     self.isProtected = False
@@ -43,4 +56,5 @@ class Player():
     self.votedCount += 1
   
   def giveChannel(self, channel):
+    print(channel)
     self.myChannel = channel

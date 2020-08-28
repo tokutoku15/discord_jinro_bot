@@ -13,6 +13,7 @@ class GameCommandManager():
       '/join'   : self.join,
       '/exit'   : self.exit,
       '/option' : self.option,
+      '/time'   : self.time,
       '/job'    : self.job,
       '/start'  : self.start,
       '/vote'   : self.vote,
@@ -39,6 +40,10 @@ class GameCommandManager():
     ret = self.GM.option(message)
     return ret
   
+  def time(self, message):
+    ret = self.GM.time(message)
+    return ret
+
   def job(self, message):
     ret = self.GM.job(message)
     return ret

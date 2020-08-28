@@ -22,3 +22,7 @@ class Job(metaclass=ABCMeta):
   @abstractmethod
   def act(self):
     pass
+
+  @abstractmethod
+  def requestAct(self, emojiDict):
+    pass

@@ -20,10 +20,10 @@ class GameStateManager():
     self.stateIndex = 2
   
   def nightCome(self):
-    self.nightCome = 3
+    self.stateIndex = 3
   
   def gameResult(self):
-    self.gameResult = 4
+    self.stateIndex = 4
   
   def nowState(self):
     return self.states[self.stateIndex]
