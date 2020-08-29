@@ -23,19 +23,41 @@ class Player():
   def giveJob(self, job):
     self.job = job
   
-  def vote(self):
+  def finishVote(self):
     self.hasVoted = True
   
   def resetVote(self):
     self.hasVoted = False
   
-  def act(self):
+  def vote(self, target, err=None):
+    text = ''
+    if not target.isAlive:
+      text = '死亡者を選択することはできません\n'
+      err = 'error'
+    else:
+      text = '<@&{target}>を選択しました\n' \
+            .format(target=target.roleId)
+    return text, err
+
+  def resetCount(self):
+    self.votedCount = 0
+  
+  def voteMe(self):
+    self.votedCount += 1
+  
+  def finishAct(self):
     self.hasActed = True
   
   def resetAct(self):
     self.hasActed = False
   
-  def protect(self):
+  def revealMe(self):
+    self.isRevealed = True
+
+  def deathRevealMe(self):
+    self.isDeathAndRevealed = True
+
+  def protectMe(self):
     self.isProtected = True
   
   def willKill(self):
@@ -49,12 +71,5 @@ class Player():
     self.isProtected = False
     self.resetCount()
   
-  def resetCount(self):
-    self.votedCount = 0
-  
-  def voteMe(self):
-    self.votedCount += 1
-  
   def giveChannel(self, channel):
-    print(channel)
     self.myChannel = channel

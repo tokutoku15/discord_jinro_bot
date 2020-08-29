@@ -46,3 +46,15 @@ class PlayerManager():
       plist = '>\n<@&'.join(deathList)
       text += '<@&{}>'.format(plist)
     return text
+  
+  def allPlayerHasActed(self):
+    for player in self.playerList.values():
+      if not player.hasActed:
+        return False
+    return True
+  
+  def allPlayerHasVoted(self):
+    for player in self.playerList.values():
+      if not player.hasVoted:
+        return False
+    return True

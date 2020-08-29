@@ -14,13 +14,8 @@ class Job(metaclass=ABCMeta):
   def setWerewolf(self, isWerewolf):
     self.isWerewolf = isWerewolf
   
-  def vote(self, targetId):
-    text = '<@!{target}>に投票しました\n' \
-            .format(target=targetId)
-    return text
-  
   @abstractmethod
-  def act(self):
+  def act(self, target, err=None):
     pass
 
   @abstractmethod

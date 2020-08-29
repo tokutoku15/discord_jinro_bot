@@ -59,7 +59,8 @@ class GameCommandManager():
     pass
 
   def act(self, message):
-    pass
+    ret = self.GM.act(message)
+    return ret
 
   '''
   その他のコマンド

@@ -45,7 +45,8 @@ class GameMaster():
       'other' : {
         'display' : 'その他',
         'commands' : {
-          '/help':'利用可能なコマンドの確認'
+          '/help':'利用可能なコマンドの確認',
+          '/stopbot' : 'ゲームの中断とBotの停止'
         }
       },
     }
@@ -69,7 +70,7 @@ class GameMaster():
   '''
   def setup(self, message):
     if self.gameChannel != message.channel:
-      return None, 'error'
+      return None, None
     if self.gameStateManager.nowState() != 'pause':
       err = self.getPhaseDisp() + '/setupコマンドは使用できません'
       return err, 'error'
@@ -88,7 +89,7 @@ class GameMaster():
   '''joinコマンド'''
   def join(self, message):
     if self.gameChannel != message.channel:
-      return None, 'error'
+      return None, None
     if self.gameStateManager.nowState() != 'setup':
       err = self.getPhaseDisp()+'/joinコマンドは使用できません'
       return err, 'error'
@@ -102,7 +103,7 @@ class GameMaster():
   '''exitコマンド'''
   def exit(self, message):
     if self.gameChannel != message.channel:
-      return None, 'error'
+      return None, None
     if self.gameStateManager.nowState() != 'setup':
       err = self.getPhaseDisp()+'/exitコマンドは使用できません'
       return err, 'error'
@@ -116,14 +117,14 @@ class GameMaster():
   '''optionコマンド'''
   def option(self, message):
     if self.gameChannel != message.channel:
-      return None, 'error'
+      return None, None
     if self.gameStateManager.nowState() != 'setup':
       err = self.getPhaseDisp()+'/optionコマンドは使用できません'
       return err, 'error'
     mes = message.content.split(' ')
     err = '対象のオプションIDまたはオプションが認識できません\n' \
           '/set [対象のオプションID] [on/off] でルールを設定してください\n' \
-          '例: 第一夜の殺害をONにしたい時\n' \
+          '例: 第一夜の殺害をONにする場合\n' \
           '**/option 1 on**'
     if len(mes) != 3:
       return err, 'error'
@@ -149,27 +150,31 @@ class GameMaster():
   '''timeコマンド'''
   def time(self, message):
     if self.gameChannel != message.channel:
-      return None, 'error'
+      return None, None
     if self.gameStateManager.nowState() != 'setup':
       err = self.getPhaseDisp()+'/timeコマンドは使用できません'
       return err, 'error'
     mes = message.content.split(' ')
     err = '時間を正しく設定できていません\n' \
           '/time [時間(分)] で話し合いの時間を設定してください(最大20分、最小1分)\n' \
-          '例: 話し合いの時間を3分にしたい時\n' \
+          '例: 話し合いの時間を3分にする場合\n' \
           '**/time 3**'
-    if len(mes) != 2:
+    try:
+      if len(mes) != 2:
+        return err, 'error'
+      setTime = int(mes[1])
+      if setTime <= 0 or 20 <= setTime:
+        return err, 'error'
+    except ValueError:
       return err, 'error'
-    if int(mes[1]) <= 0 or 20 <= int(mes[1]):
-      return err, 'error'
-    self.discussTime = int(mes[1])
+    self.discussTime = setTime
     embed = self.gameOptDisp()
     return embed, 'time'
   
   '''jobコマンド'''
   def job(self, message):
     if self.gameChannel != message.channel:
-      return None, 'error'
+      return None, None
     if self.gameStateManager.nowState() != 'setup':
       err = self.getPhaseDisp()+'/jobコマンドは使用できません'
       return err, 'error'
@@ -178,24 +183,27 @@ class GameMaster():
     err = '対象の役職IDが認識できません\n' \
           '/job [対象の役職ID] [人数]... で役職の人数を設定してください\n' \
           '複数の役職の人数も設定できます\n' \
-          '例: 村人を3人、人狼を2人に設定する時\n' \
+          '例: 村人を3人、人狼を2人に設定する場合\n' \
           '**/job 0 3 1 2**' 
     if len(mes[index:]) < 2:
       return err, 'error'
-    while len(mes[index:]) >= 2:
-      jobId = int(mes[index])
-      jobNum = int(mes[index+1])
-      if jobId >= len(self.jobManager.jobNumList):
-        return err, 'error'
-      self.jobManager.setJobNum(jobId, jobNum)
-      index += 2
+    try:
+      while len(mes[index:]) >= 2:
+        jobId = int(mes[index])
+        jobNum = int(mes[index+1])
+        if jobId >= len(self.jobManager.jobNumList):
+          return err, 'error'
+        self.jobManager.setJobNum(jobId, jobNum)
+        index += 2
+    except ValueError:
+      return err, 'error'
     ret = self.gameOptDisp()
     return ret, 'job'
   
   '''startコマンド'''
   def start(self, message):
     if self.gameChannel != message.channel:
-      return None, 'error'
+      return None, None
     if self.gameStateManager.nowState() != 'setup':
       err = self.getPhaseDisp()+'/startコマンドは使用できません'
       return err, 'error'
@@ -209,6 +217,38 @@ class GameMaster():
     self.gameStateManager.nightCome()
     self.giveRoleAndJob()
     return ret, 'start'
+
+  '''actコマンド'''
+  def act(self, message):
+    if not self.isFromPlayersChannel(message):
+      return None, None
+    if self.gameStateManager.nowState() != 'playing_night':
+      err = self.getPhaseDisp()+'/actコマンドは使用できません'
+      return err, 'error'
+    author = self.playerManager.playerList[message.author.id]
+    if author.hasActed:
+      err = 'もうアクションは終えています\n他のプレイヤーのアクションが終わるまでしばらくお待ちください\n'
+      return err, 'error'
+    mes = message.content.split(' ')
+    if len(mes) > 2:
+      err = '対象が多すぎます\n1人だけ選択してください\n'
+      return err, 'error'
+    if not '<@&' in mes[1]:
+      err = '対象プレイヤーを認識できません\n'
+      return err, 'error'
+    targetRoleId = int(mes[1].lstrip('<@&').rstrip('>'))
+    authorRoleId = author.roleId
+    if targetRoleId == authorRoleId:
+      err = '自分を対象に選択することはできません\n他のプレイヤーを選んでください\n'
+      return err, 'error'
+    ret, err = self.jobAct(targetRoleId, message.author)
+    if not err is None:
+      return ret, err
+    else:
+      if not self.playerManager.allPlayerHasActed():
+        return ret, None
+      return ret, 'act'
+    
     
   '''helpコマンド'''
   def help(self, message):
@@ -230,13 +270,81 @@ class GameMaster():
   '''
   ユーティリティ関数
   '''
+  def isFromPlayersChannel(self, message):
+    try:
+      mesChnId = message.channel.id
+      playerChnId = self.playerManager.playerList[message.author.id].myChannel.id
+      return mesChnId == playerChnId
+    except KeyError:
+      return False
+
   def giveRoleAndJob(self):
+    jobs = self.jobManager.getJobStack()
     for player in self.playerManager.playerList.values():
       roleName = 'player-{}'.format(player.name)
-      jobs = self.jobManager.getJobStack()
       random.shuffle(jobs)
       player.giveDiscRole(roleName)
       player.giveJob(jobs.pop(0))
+
+  def jobAct(self, targetRoleId, author, ret=None, err=None):
+    author = self.playerManager.playerList[author.id]
+    authorJob = author.job
+    targetPlayer = None
+    for player in self.playerManager.playerList.values():
+      if targetRoleId == player.roleId:
+        targetPlayer = player
+        break
+    if authorJob.jobName == 'werewolf':
+      if self.dayCount == 1 and not self.oneNightKill:
+        ret, err = author.vote(targetPlayer)
+        if not err is None:
+          return ret, err
+        targetPlayer.voteMe()
+      else:
+        ret, err = authorJob.act(targetPlayer)
+        if not err is None:
+          return ret, err
+        targetPlayer.willKill()
+    elif authorJob.jobName == 'fortuneteller':
+      if self.dayCount == 1 and not self.oneNightReveal:
+        ret, err = author.vote(targetPlayer)
+        if not err is None:
+          return ret, err
+        targetPlayer.voteMe()
+      else:
+        ret, err = authorJob.act(targetPlayer)
+        if not err is None:
+          return ret, err
+        targetPlayer.revealMe()
+    elif authorJob.jobName == 'psychic':
+      if self.dayCount == 1:
+        ret, err = author.vote(targetPlayer)
+        if not err is None:
+          return ret, err
+        targetPlayer.voteMe()
+      else:
+        ret, err = authorJob.act(targetPlayer)
+        if not err is None:
+          return ret, err
+        targetPlayer.deathRevealMe()
+    elif authorJob.jobName == 'knight':
+      if self.dayCount == 1 and not self.oneNightKill:
+        ret, err = author.vote(targetPlayer)
+        if not err is None:
+          return ret, err
+        targetPlayer.voteMe()
+      else:
+        ret, err = authorJob.act(targetPlayer)
+        if not err is None:
+          return ret, err
+        targetPlayer.protectMe()
+    else:
+      ret, err = authorJob.act(targetPlayer)
+      if not err is None:
+        return ret, err
+      targetPlayer.voteMe()
+    author.finishAct()
+    return ret, err
 
   def getPhaseDisp(self):
     phase = self.gameStateManager.nowState()
@@ -283,6 +391,11 @@ class GameMaster():
   '''
   ゲームマスターのテキスト
   '''
+  def werewolfChannelText(self):
+    text = 'ここは人狼陣営専用のテキストチャンネルです\n' \
+          '誰を襲撃するかなどを相談するチャットスペースとして利用できます\n'
+    return text
+
   def comeNightText(self):
     title = '###{}日目の夜###'.format(self.dayCount)
     text = ''
@@ -301,8 +414,24 @@ class GameMaster():
     title = '###{}日目の朝###'.format(self.dayCoutnt)
     text = '夜が明けました\n昨夜処刑されたプレイヤーは\n'
 
-  def requestNightActText(self):
-    pass
+  def requestNightActText(self, job, emojiDict):
+    text = job.requestAct(emojiDict)
+    text += '例: 「@player-ほげほげ」に対してアクションを行う場合\n**/act @player-ほげほげ**\n'
+    if self.dayCount == 1:
+      if job.jobName == 'werewolf':
+        if not self.oneNightKill:
+          text += '※ 第一夜の殺害はできません\n'
+      elif job.jobName == 'fortuneteller':
+        if not self.oneNightReveal:
+          text += '第一夜での占いはできないので人狼だと疑うプレイヤーを選択してください\n'
+      elif job.jobName == 'psychic':
+        text += '死亡者がいないので人狼だと疑うプレイヤーを選択してください\n'
+      elif job.jobName == 'knight':
+        if not self.oneNightKill:
+          text += '第一夜の殺害は「なし」なので人狼だと疑うプレイヤーを選択してください\n'
+    return text
 
   def requestVoteText(self):
-    pass
+    text = '処刑するプレイヤーに投票してください\n' \
+           '例: 「@player-ほげほげ」に投票する場合\n**/vote @player-ほげほげ**'
+    return text 
