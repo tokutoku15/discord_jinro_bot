@@ -19,12 +19,16 @@ class JinroClient(discord.Client):
     self.gameCommandManager = GameCommandManager(self.gameChannel)
     self.GM = self.gameCommandManager.GM
     self.GM.jobManager.registerJobEmoji(self.emojiManger.emojiIdDict)
-    await self.deleteChannel('人狼陣営')
-    await self.deleteRole('player-')
+    await self.initialize()
     print(self.user.name)
     print(self.user.id)
     print('---------------')
     await self.gameChannel.send('Botのログインに成功！！')
+  
+  async def initialize(self):
+    await self.deleteChannel('人狼陣営')
+    await self.deleteChannel('player-')
+    await self.deleteRole('player-')
 
   async def on_message(self, message):
     if self.user != message.author:
@@ -43,6 +47,7 @@ class JinroClient(discord.Client):
       
       if notification == 'start':
         print('テキストチャンネル作成')
+        await self.initialize()
         await self.createAllPlayersChannel()
         await self.sendWerewolfChannel()
         await self.gameChannel.send('それではゲームを始めます')
@@ -52,6 +57,8 @@ class JinroClient(discord.Client):
         await self.sendNextDayText()
         isGameSet = await self.sendGameResult()
         if isGameSet:
+          embed = self.GM.byeEmbed()
+          await self.gameChannel.send(embed=embed)
           return
         await asyncio.sleep(3)
         # await self.displayRemainTime(self.GM.discussTime*60)
@@ -64,6 +71,8 @@ class JinroClient(discord.Client):
         elif self.GM.gameStateManager.nowState() == 'playing_night':
           isGameSet = await self.sendGameResult()
           if isGameSet:
+            embed = self.GM.byeEmbed()
+            await self.gameChannel.send(embed=embed)
             return
           await self.sendComeNightText()
 
@@ -174,7 +183,7 @@ class JinroClient(discord.Client):
   
   async def deleteChannel(self, channelName):
     for channel in self.gameGuild.channels:
-      if channel.name == channelName:
+      if channelName in channel.name:
         await channel.delete()
   
   async def deleteRole(self, roleName):

@@ -497,6 +497,11 @@ class GameMaster():
       self.gameStateManager.gameResult()
     return winner
 
+  def resetGameInfo(self):
+    self.dayCount = 1
+    self.playerManager.playerList.clear()
+    self.gameStateManager.botPause()
+
   '''
   ゲームマスターのセリフテキスト
   '''
@@ -634,14 +639,22 @@ class GameMaster():
     url = "https://cdn.discordapp.com/emojis/{emojiid}" \
             .format(emojiid=emojiDict[ret].id)
     if ret == 'villager':
-      embed = discord.Embed(title='村人の勝利！', color=0x0)
+      embed = discord.Embed(title='村人の勝利！', colour=0xffffff)
       embed.set_thumbnail(url=url)
       embed.add_field(name="勝者", value=villagerText, inline=True)
       embed.add_field(name="敗者", value=werewolfText, inline=True)
     elif ret == 'werewolf':
-      embed = discord.Embed(title='人狼の勝利！', color=0xffffff)
+      embed = discord.Embed(title='人狼の勝利！', colour=0x0d0d0d)
       embed.set_thumbnail(url=url)
       embed.add_field(name="勝者", value=werewolfText, inline=True)
       embed.add_field(name="敗者", value=villagerText, inline=True)
     return embed
 
+  def byeEmbed(self):
+    self.resetGameInfo()
+    title = 'Jinro Bot'
+    text = 'これでゲームは終了します\n' \
+           'またプレーする時は/setupコマンドで呼び出してください\n' \
+           'お疲れ様でした<(_ _)>\n'
+    embed = discord.Embed(title=title, description=text, color=self.colorCode['other'])
+    return embed
