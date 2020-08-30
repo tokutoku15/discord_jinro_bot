@@ -23,7 +23,7 @@ class JinroClient(discord.Client):
     print(self.user.name)
     print(self.user.id)
     print('---------------')
-    await self.gameChannel.send('Botのログインに成功！！')
+    await self.gameChannel.send('Botがログインしました\nゲームを立ち上げる時は/setupコマンドを送信してください')
   
   async def initialize(self):
     await self.deleteChannel('人狼陣営')
