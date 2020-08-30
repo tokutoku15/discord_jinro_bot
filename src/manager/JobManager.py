@@ -36,3 +36,7 @@ class JobManager():
       for _ in range(num):
         jobStack.append(job)
     return jobStack
+  
+  def registerJobEmoji(self, emojiDict):
+    for job in self.jobNumList.keys():
+      job.setJobEmoji(emojiDict)

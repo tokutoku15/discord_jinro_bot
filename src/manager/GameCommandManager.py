@@ -56,7 +56,8 @@ class GameCommandManager():
   ゲームアクションコマンド
   '''
   def vote(self, message):
-    pass
+    ret = self.GM.vote(message)
+    return ret
 
   def act(self, message):
     ret = self.GM.act(message)

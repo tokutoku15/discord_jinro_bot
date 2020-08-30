@@ -8,6 +8,7 @@ class GameStateManager():
       'playing_day',
       'playing_night',
       'playing_result',
+      'playing_dicuss',
     ]
   
   def botPause(self):
@@ -16,7 +17,7 @@ class GameStateManager():
   def gameSetup(self):
     self.stateIndex = 1 
 
-  def nextDay(self):
+  def daytime(self):
     self.stateIndex = 2
   
   def nightCome(self):
@@ -24,6 +25,9 @@ class GameStateManager():
   
   def gameResult(self):
     self.stateIndex = 4
+  
+  def discussion(self):
+    self.stateIndex = 5
   
   def nowState(self):
     return self.states[self.stateIndex]

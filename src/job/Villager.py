@@ -18,10 +18,9 @@ class Villager(Job):
               .format(target=target.roleId)
     return text, err
 
-  def requestAct(self, emojiDict):
-    emoji = emojiDict[self.jobName]
-    emojiText = '<:{name}:{id}>'.format(name=emoji.name, id=emoji.id)
+  def requestAct(self):
+    emoji = self.emojiDict[self.jobName]
     text = 'あなたの役職は{job}{emoji}です\n' \
            '人狼だと疑うプレイヤーを選択してください\n' \
-             .format(job=self.jobDispName, emoji=emojiText)
+             .format(job=self.jobDispName, emoji=emoji)
     return text

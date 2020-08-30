@@ -8,6 +8,13 @@ class GameMaster():
 
   def __init__(self, gameChannel):
     self.gameChannel = gameChannel
+    self.jobManager = JobManager()
+    self.colorCode = {
+      'other' : 0x09d73d,
+      'playing_night' : 0x7578bd,
+      'playing_day' : 0x40e7e5,
+      'playing_vote' : 0xff9900
+    }
     self.stateDisp = {
       'pause' : {
         'display' : 'Bot休止中',
@@ -31,6 +38,10 @@ class GameMaster():
         'commands' : {
           '/vote' : '対象のプレイヤーに投票'
         }
+      },
+      'playing_discuss' : {
+        'display' : '話し合い中',
+        'commands' : {},
       },
       'playing_night' : {
         'display' : '夜のフェーズ',
@@ -57,7 +68,6 @@ class GameMaster():
     self.discussTime = 5
     self.gameStateManager = GameStateManager()
     self.playerManager = PlayerManager()
-    self.jobManager = JobManager()
     self.oneNightKill = False
     self.oneNightReveal = False
   
@@ -72,7 +82,7 @@ class GameMaster():
     if self.gameChannel != message.channel:
       return None, None
     if self.gameStateManager.nowState() != 'pause':
-      err = self.getPhaseDisp() + '/setupコマンドは使用できません'
+      err = self.getPhaseText() + '/setupコマンドは使用できません'
       return err, 'error'
     self.gameStateManager.gameSetup()
     author = message.author
@@ -83,7 +93,7 @@ class GameMaster():
       '{cmd} : {desc}'.format(cmd=cmd,desc=desc)
       for cmd, desc in self.stateDisp['setup']['commands'].items()
     ])
-    ret = self.gameOptDisp(description=description)
+    ret = self.gameOptEmbed(description=description)
     return ret, 'setup'
   
   '''joinコマンド'''
@@ -91,13 +101,13 @@ class GameMaster():
     if self.gameChannel != message.channel:
       return None, None
     if self.gameStateManager.nowState() != 'setup':
-      err = self.getPhaseDisp()+'/joinコマンドは使用できません'
+      err = self.getPhaseText()+'/joinコマンドは使用できません'
       return err, 'error'
     author = message.author
     self.playerManager.addPlayer(author.display_name, author.id)
     description = "<@!{userId}>がゲームに参加しました" \
                       .format(userId=author.id)
-    ret = self.gameOptDisp(description=description)
+    ret = self.gameOptEmbed(description=description)
     return ret, 'join'
   
   '''exitコマンド'''
@@ -105,13 +115,13 @@ class GameMaster():
     if self.gameChannel != message.channel:
       return None, None
     if self.gameStateManager.nowState() != 'setup':
-      err = self.getPhaseDisp()+'/exitコマンドは使用できません'
+      err = self.getPhaseText()+'/exitコマンドは使用できません'
       return err, 'error'
     author = message.author
     self.playerManager.removePlayer(author.id)
     description = "<@!{userId}>がゲームから退出しました" \
                     .format(userId=author.id)
-    ret = self.gameOptDisp(description=description)
+    ret = self.gameOptEmbed(description=description)
     return ret, 'exit'
   
   '''optionコマンド'''
@@ -119,7 +129,7 @@ class GameMaster():
     if self.gameChannel != message.channel:
       return None, None
     if self.gameStateManager.nowState() != 'setup':
-      err = self.getPhaseDisp()+'/optionコマンドは使用できません'
+      err = self.getPhaseText()+'/optionコマンドは使用できません'
       return err, 'error'
     mes = message.content.split(' ')
     err = '対象のオプションIDまたはオプションが認識できません\n' \
@@ -144,7 +154,7 @@ class GameMaster():
         return err, 'error'
     else:
       return err, 'error'
-    ret = self.gameOptDisp()
+    ret = self.gameOptEmbed()
     return ret, 'option'
   
   '''timeコマンド'''
@@ -152,7 +162,7 @@ class GameMaster():
     if self.gameChannel != message.channel:
       return None, None
     if self.gameStateManager.nowState() != 'setup':
-      err = self.getPhaseDisp()+'/timeコマンドは使用できません'
+      err = self.getPhaseText()+'/timeコマンドは使用できません'
       return err, 'error'
     mes = message.content.split(' ')
     err = '時間を正しく設定できていません\n' \
@@ -168,7 +178,7 @@ class GameMaster():
     except ValueError:
       return err, 'error'
     self.discussTime = setTime
-    embed = self.gameOptDisp()
+    embed = self.gameOptEmbed()
     return embed, 'time'
   
   '''jobコマンド'''
@@ -176,7 +186,7 @@ class GameMaster():
     if self.gameChannel != message.channel:
       return None, None
     if self.gameStateManager.nowState() != 'setup':
-      err = self.getPhaseDisp()+'/jobコマンドは使用できません'
+      err = self.getPhaseText()+'/jobコマンドは使用できません'
       return err, 'error'
     mes = message.content.split(' ')
     index = 1
@@ -197,7 +207,7 @@ class GameMaster():
         index += 2
     except ValueError:
       return err, 'error'
-    ret = self.gameOptDisp()
+    ret = self.gameOptEmbed()
     return ret, 'job'
   
   '''startコマンド'''
@@ -205,7 +215,7 @@ class GameMaster():
     if self.gameChannel != message.channel:
       return None, None
     if self.gameStateManager.nowState() != 'setup':
-      err = self.getPhaseDisp()+'/startコマンドは使用できません'
+      err = self.getPhaseText()+'/startコマンドは使用できません'
       return err, 'error'
     jobNumSum = sum(list(self.jobManager.jobNumList.values()))
     playerNum = len(self.playerManager.playerList)
@@ -223,7 +233,7 @@ class GameMaster():
     if not self.isFromPlayersChannel(message):
       return None, None
     if self.gameStateManager.nowState() != 'playing_night':
-      err = self.getPhaseDisp()+'/actコマンドは使用できません'
+      err = self.getPhaseText()+'/actコマンドは使用できません'
       return err, 'error'
     author = self.playerManager.playerList[message.author.id]
     if author.hasActed:
@@ -247,24 +257,49 @@ class GameMaster():
     else:
       if not self.playerManager.allPlayerHasActed():
         return ret, None
-      return ret, 'act'
-    
+    self.gameStateManager.daytime()
+    return ret, 'act'
+  
+  '''voteコマンド'''
+  def vote(self, message):
+    if not self.isFromPlayersChannel(message):
+      return None, None
+    if self.gameStateManager.nowState() != 'playing_day':
+      err = self.getPhaseText()+'/voteコマンドは使用できません'
+      return err, 'error'
+    author = self.playerManager.playerList[message.author.id]
+    if author.hasVoted:
+      err = 'もう投票は終えています\n他のプレイヤーの投票が終わるまでしばらくお待ちください\n'
+      return err, 'error'
+    mes = message.content.split(' ')
+    if len(mes) > 2:
+      err = '対象が多すぎます\n1人だけ選択してください\n'
+      return err, 'error'
+    if not '<@&' in mes[1]:
+      err = '対象プレイヤーを認識できません\n'
+      return err, 'error'
+    targetRoleId = int(mes[1].lstrip('<@&').rstrip('>'))
+    authorRoleId = author.roleId
+    if targetRoleId == authorRoleId:
+      err = '自分を対象に選択することはできません\n他のプレイヤーを選んでください\n'
+      return err, 'error'
+    ret, err = self.dayVote(targetRoleId, message.author)
+    if not err is None:
+      return ret, err
+    else:
+      if not self.playerManager.allPlayerHasVoted():
+        return ret, None
+    return ret, 'vote'
     
   '''helpコマンド'''
   def help(self, message):
     if self.gameChannel != message.channel:
-      return None, 'error'
-    embed = discord.Embed(title="Help", description="利用できるコマンドは以下の通りです", color=0x2586d0)
-    for phase in self.stateDisp.keys():
-      text = ''
-      if len(self.stateDisp[phase]['commands']) != 0:
-        text = '\n'.join([
-          '{cmd} : {description}'.format(cmd=cmd, description=description)
-          for cmd, description in self.stateDisp[phase]['commands'].items()
-        ])
+      if 'playing' in self.gameStateManager.nowState():
+        if not self.isFromPlayersChannel(message):
+          return None, 'error'
       else:
-        text = 'なし'
-      embed.add_field(name=self.stateDisp[phase]['display'], value=text, inline=False)
+        return None, 'error'
+    embed = self.commandsEmbed()
     return embed, 'help'
 
   '''
@@ -346,17 +381,56 @@ class GameMaster():
     author.finishAct()
     return ret, err
 
-  def getPhaseDisp(self):
+  def nightActResult(self):
+    killPlayerId = None
+    maxVote = 0
+    doubtPlayers = []
+    for userId, player in self.playerManager.playerList.items():
+      if player.willBeKilled and not player.isProtected:
+        if killPlayerId is None:
+          killPlayerId = userId
+          player.killMe()
+      if player.isAlive:
+        if maxVote < player.votedCount:
+          doubtPlayers.clear()
+          maxVote = player.votedCount
+          doubtPlayers.append(userId)
+        elif maxVote == player.votedCount:
+          doubtPlayers.append(userId)
+      player.nextDay()
+    killPlayerText = '<@!{}>'.format(killPlayerId)
+    doubtPlayersIdList = '>\n<@!'.join([
+      str(userId) for userId in doubtPlayers
+    ])
+    doubtPlayersText = '<@!{}>\n'.format(doubtPlayersIdList)
+    if killPlayerId is None:
+      killPlayerText = None
+    self.playerManager.resetAllPlayerHasActed()
+    return killPlayerText, doubtPlayersText
+
+  def dayVote(self, targetRoleId, author, ret=None, err=None):
+    author = self.playerManager.playerList[author.id]
+    targetPlayer = None
+    for player in self.playerManager.playerList.values():
+      if targetRoleId == player.roleId:
+        ret, err = author.vote(player)
+        if not err is None:
+          return err, err
+        player.voteMe()
+        author.finishVote()
+    return ret, err
+
+  def getPhaseText(self):
     phase = self.gameStateManager.nowState()
     phaseText = self.stateDisp[phase]['display']
     text = '今のフェーズは{phase}です\n'.format(phase=phaseText)
     return text
 
-  def gameOptDisp(self, **kwargs):
+  def gameOptEmbed(self, **kwargs):
     description = None
     if 'description' in kwargs.keys():
       description = kwargs['description']
-    embed = discord.Embed(title='Jinro Bot', description=description, color=0x2586d0)
+    embed = discord.Embed(title='Jinro Bot', description=description, colour=self.colorCode['other'])
 
     checkMark = lambda x: '✔︎' if x else ' '
     oneNightKill = '`[{}]`ON\n`[{}]`OFF' \
@@ -379,24 +453,59 @@ class GameMaster():
     embed.add_field(name='参加者', value=joiners, inline=True)
     return embed
   
-  def gamePlayerDisp(self):
-    phaseColor = lambda phase: 0x7578bd if phase=='playing_night' else 0xfba779
-    embed = discord.Embed(title='プレイヤーリスト', color=phaseColor(self.gameStateManager.nowState()))
-    aliveList = self.playerManager.getAlivePlayerRolesListDisp()
+  def gamePlayersEmbed(self, jobName):
+    embed = discord.Embed(title='プレイヤーリスト', colour=self.colorCode[self.gameStateManager.nowState()])
+    aliveList = self.playerManager.getAlivePlayerRolesListDisp(jobName)
     embed.add_field(name='生存者', value=aliveList, inline=True)
-    deathList = self.playerManager.getDeathPlayerRolesListDisp()
+    deathList = self.playerManager.getDeathPlayerRolesListDisp(jobName)
     embed.add_field(name='死亡者', value=deathList, inline=True)
     return embed
+  
+  def commandsEmbed(self):
+    embed = discord.Embed(title="Help", description="利用できるコマンドは以下の通りです", colour=self.colorCode['other'])
+    for phase in self.stateDisp.keys():
+      text = ''
+      if len(self.stateDisp[phase]['commands']) != 0:
+        text = '\n'.join([
+          '{cmd} : {description}'.format(cmd=cmd, description=description)
+          for cmd, description in self.stateDisp[phase]['commands'].items()
+        ])
+        embed.add_field(name=self.stateDisp[phase]['display'], value=text, inline=False)
+    return embed
+
+  def startDiscussion(self):
+    self.gameStateManager.discussion()
+  
+  def finishDiscussion(self):
+    self.gameStateManager.daytime() 
+  
+  def isGameSet(self):
+    winner = None
+    aliveWerewolf = [
+      player for player in self.playerManager.playerList.values()
+      if player.isAlive and player.job.isWerewolf
+    ]
+    aliveVillager = [
+      player for player in self.playerManager.playerList.values()
+      if player.isAlive and not player.job.isWerewolf
+    ]
+    if len(aliveWerewolf) == 0:
+      winner = 'villager'
+    elif len(aliveWerewolf) >= len(aliveVillager):
+      winner = 'werewolf'
+    if not winner is None:
+      self.gameStateManager.gameResult()
+    return winner
 
   '''
-  ゲームマスターのテキスト
+  ゲームマスターのセリフテキスト
   '''
   def werewolfChannelText(self):
     text = 'ここは人狼陣営専用のテキストチャンネルです\n' \
           '誰を襲撃するかなどを相談するチャットスペースとして利用できます\n'
     return text
 
-  def comeNightText(self):
+  def comeNightEmbed(self):
     title = '###{}日目の夜###'.format(self.dayCount)
     text = ''
     if self.dayCount == 1:
@@ -405,17 +514,68 @@ class GameMaster():
       text += '容疑者を処刑したにもかかわらず、恐ろしい夜がまたやってきました\n'
     text += 'これから夜のアクションを行います\n' \
             'プライベートチャンネルでアクションを行ってください\n'
-    embed = discord.Embed(title=title, description=text, color=0x7578bd)
+    embed = discord.Embed(title=title, description=text, colour=self.colorCode[self.gameStateManager.nowState()])
     return embed
   
-  def nextDay(self):
-    self.gameStateManager.nextDay()
+  def nextDayEmbed(self):
     self.dayCount += 1
-    title = '###{}日目の朝###'.format(self.dayCoutnt)
-    text = '夜が明けました\n昨夜処刑されたプレイヤーは\n'
+    killedPlayer, doubtPlayers = self.nightActResult()
+    title = '###{}日目の朝###'.format(self.dayCount)
+    text = '夜が明けました\n昨晩襲撃されたプレイヤーは\n'
+    if killedPlayer is None:
+      text += 'いませんでした\n'
+    else:
+      text += '{killPlayer}です\n'.format(killPlayer=killedPlayer)
+    text += 'そして人狼と疑われているプレイヤーは\n' \
+            '{doubtPlayers}です\nこれから人狼を探すために話し合ってください\n' \
+            '話し合いの時間は今から{time}分です\n' \
+             .format(doubtPlayers=doubtPlayers, time=self.discussTime)
+    embed = discord.Embed(title=title, description=text, colour=self.colorCode[self.gameStateManager.nowState()])
+    return embed
+
+  def voteResultEmbed(self):
+    maxVote = 0
+    self.execution = []
+    for userId, player in self.playerManager.playerList.items():
+      if maxVote < player.votedCount:
+        self.execution.clear() 
+        maxVote = player.votedCount
+        self.execution.append((userId, player))
+      elif maxVote == player.votedCount:
+        self.execution.append((userId, player))
+      player.resetCount()
+    if len(self.execution) > 1:
+      title = '###決選投票###'
+      executionText = '>\n<@!'.join([
+        str(userId) for userId, execution in self.execution
+      ])
+      text = '投票の結果、最多票が複数名いました\n' \
+            '<@!{}>\nです\n決選投票を行うのでプライベートチャンネルで投票を行ってください' \
+              .format(executionText)
+      embed = discord.Embed(title=title, description=text, colour=discord.Colour.dark_orange())
+      self.playerManager.resetAllPlayerHasVoted()
+      return embed
+    else:
+      self.playerManager.playerList[self.execution[-1][0]].killMe()
+      title = '###処刑実行###'
+      text = '投票の結果、処刑されるプレイヤーは\n' \
+             '<@!{execution}>\nです\n<@!{execution}>はこのゲームが終わるまでゲームの内容について話すことはできません\n' \
+               .format(execution=self.execution[-1][0])
+      embed = discord.Embed(title=title, description=text, colour=discord.Color.dark_orange())
+      self.gameStateManager.nightCome()
+      return embed
+        
+
+  def voteTimeComeEmbed(self):
+    title = '###投票の時間###'
+    text = '話し合いは終了です\nここからはゲームの内容について話してはいけません\n' \
+           '今から処刑するプレイヤーを決めるため投票を行います\n' \
+           'プライベートチャンネルで投票を行ってください\n'
+    embed = discord.Embed(title=title, description=text, colour=discord.Colour.dark_orange())
+    return embed
 
   def requestNightActText(self, job, emojiDict):
-    text = job.requestAct(emojiDict)
+    text = job.requestAct()
     text += '例: 「@player-ほげほげ」に対してアクションを行う場合\n**/act @player-ほげほげ**\n'
     if self.dayCount == 1:
       if job.jobName == 'werewolf':
@@ -435,3 +595,53 @@ class GameMaster():
     text = '処刑するプレイヤーに投票してください\n' \
            '例: 「@player-ほげほげ」に投票する場合\n**/vote @player-ほげほげ**'
     return text 
+  
+  def voteTargetListEmbed(self):
+    targetListText = ''
+    if hasattr(self, 'execution'):
+      if len(self.execution) > 1:
+        targetList = '>\n<@&'.join([
+          str(player.roleId) for _, player in self.execution
+        ])
+        targetListText = '<@&{}>'.format(targetList)
+      else:
+        targetListText = self.playerManager.getAlivePlayerRolesListDisp()
+    else:
+      targetListText = self.playerManager.getAlivePlayerRolesListDisp()
+    embed = discord.Embed(title='プレイヤーリスト', description=targetListText, colour=discord.Colour.dark_orange())
+    return embed
+
+  def gameSetEmbed(self, emojiDict):
+    ret = self.isGameSet()
+    if ret is None:
+      return None
+    embed = None
+    alive = lambda x: '生存' if x else '死亡'
+    werewolf = [
+      '<@!{userId}> [{jobName}] ({alive})' \
+        .format(userId=userId, jobName=player.job.getJobNameWithEmoji(), alive=alive(player.isAlive))
+      for userId, player in self.playerManager.playerList.items()
+      if player.job.isWerewolf
+    ]
+    villager = [
+      '<@!{userId}> [{jobName}] ({alive})' \
+        .format(userId=userId, jobName=player.job.getJobNameWithEmoji(), alive=alive(player.isAlive))
+      for userId, player in self.playerManager.playerList.items()
+      if not player.job.isWerewolf
+    ]
+    werewolfText = '\n'.join(werewolf)
+    villagerText = '\n'.join(villager)
+    url = "https://cdn.discordapp.com/emojis/{emojiid}" \
+            .format(emojiid=emojiDict[ret].id)
+    if ret == 'villager':
+      embed = discord.Embed(title='村人の勝利！', color=0x0)
+      embed.set_thumbnail(url=url)
+      embed.add_field(name="勝者", value=villagerText, inline=True)
+      embed.add_field(name="敗者", value=werewolfText, inline=True)
+    elif ret == 'werewolf':
+      embed = discord.Embed(title='人狼の勝利！', color=0xffffff)
+      embed.set_thumbnail(url=url)
+      embed.add_field(name="勝者", value=werewolfText, inline=True)
+      embed.add_field(name="敗者", value=villagerText, inline=True)
+    return embed
+
