@@ -19,6 +19,7 @@ class GameCommandManager():
       '/vote'   : self.vote,
       '/act'    : self.act,
       '/help'   : self.help,
+      '/stopbot': self.stopbot,
     }
   
   '''
@@ -69,13 +70,14 @@ class GameCommandManager():
   def help(self, message):
     ret = self.GM.help(message)
     return ret 
-
-  def dontAccept(self):
-    self.isAccept = False
   
-  def readyAccept(self):
-    self.isAccept = True
+  def stopbot(self, message):
+    ret = self.GM.stopbot(message)
+    return ret
 
+  '''
+  メッセージをパースしてコマンドを実行
+  '''
   def parseMesAndRunCmd(self, message, ret=None, notification=None):
     mes = message.content.split(' ')
     if mes[0] in self.commands:

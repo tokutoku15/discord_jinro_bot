@@ -9,6 +9,8 @@ class GameMaster():
   def __init__(self, gameChannel):
     self.gameChannel = gameChannel
     self.jobManager = JobManager()
+    self.gameStateManager = GameStateManager()
+    self.discussTime = 5
     self.colorCode = {
       'other' : 0x09d73d,
       'playing_night' : 0x7578bd,
@@ -65,8 +67,6 @@ class GameMaster():
 
   def initialize(self):
     self.dayCount = 1
-    self.discussTime = 5
-    self.gameStateManager = GameStateManager()
     self.playerManager = PlayerManager()
     self.oneNightKill = False
     self.oneNightReveal = False
@@ -84,6 +84,7 @@ class GameMaster():
     if self.gameStateManager.nowState() != 'pause':
       err = self.getPhaseText() + '/setupコマンドは使用できません'
       return err, 'error'
+    self.initialize()
     self.gameStateManager.gameSetup()
     author = message.author
     self.playerManager.addPlayer(author.display_name, author.id)
@@ -301,6 +302,16 @@ class GameMaster():
         return None, 'error'
     embed = self.commandsEmbed()
     return embed, 'help'
+
+  def stopbot(self, message):
+    if self.gameChannel != message.channel:
+      return None, None
+    self.initialize()
+    self.gameStateManager.botPause()
+    title = 'Jinro Bot'
+    text = 'ゲームを終了します\nゲームを再度立ち上げる時は/setupコマンドを送信してください\n'
+    embed = discord.Embed(title=title, description=text, color=self.colorCode['other'])
+    return embed, 'stopbot'
 
   '''
   ユーティリティ関数
@@ -655,6 +666,6 @@ class GameMaster():
     title = 'Jinro Bot'
     text = 'これでゲームは終了します\n' \
            'またプレーする時は/setupコマンドで呼び出してください\n' \
-           'お疲れ様でした<(_ _)>\n'
+           'お疲れ様でした:wave:\n'
     embed = discord.Embed(title=title, description=text, color=self.colorCode['other'])
     return embed

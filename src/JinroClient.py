@@ -45,9 +45,11 @@ class JinroClient(discord.Client):
       elif isinstance(cmdResult, discord.Embed):
         await message.channel.send(embed=cmdResult)
       
+      if notification == 'setup':
+        await self.initialize()
+      
       if notification == 'start':
         print('テキストチャンネル作成')
-        await self.initialize()
         await self.createAllPlayersChannel()
         await self.sendWerewolfChannel()
         await self.gameChannel.send('それではゲームを始めます')
